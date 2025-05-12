@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from datetime import datetime
+import re
 
 # --- Médecins ---
 class Medecin(models.Model):
@@ -140,11 +141,21 @@ class FicheEvenement(models.Model):
 
         # Génération auto du numéro de facture
         if not self.no_facture:
-            event_date = self.date_evenement or timezone.now().date()
-            year = event_date.year
-            month = event_date.month
-            count = FicheEvenement.objects.filter(date_evenement__year=year).count() + 1
-            self.no_facture = f"{year}E{month:02d}.{count}/01"
+            d = self.date_evenement or timezone.now().date()
+            prefix = f"{d.year}E{d.month:02d}."
+            # chercher toutes les factures commençant par ce préfixe
+            same_month = FicheEvenement.objects.filter(
+                no_facture__startswith=prefix
+            ).values_list('no_facture', flat=True)
+
+            # extraire la partie numérique entre le point et la barre oblique
+            numbers = [
+                int(re.search(r"\.(\d+)/", inv).group(1))
+                for inv in same_month
+                if re.search(r"\.(\d+)/", inv)
+            ]
+            next_seq = (max(numbers) if numbers else 0) + 1
+            self.no_facture = f"{prefix}{next_seq:02d}/01"
 
         super().save(*args, **kwargs)
 
