@@ -516,16 +516,21 @@ from django.views.generic import DeleteView
 from django.urls import reverse_lazy
 from .models import FicheEvenement
 
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
+from .models import FicheEvenement
+
 class FicheEvenementDeleteView(DeleteView):
     model = FicheEvenement
     template_name = 'expertise/evenement_confirm_delete.html'
 
-def get_success_url(self):
-    personnel = getattr(self.object, 'personnel', None)
-    if personnel:
-        return reverse_lazy('personnel_detail', kwargs={'dn': personnel.dn})
-    else:
-        return reverse_lazy('personnel_list')  # Fallback si pas de personnel
+    def get_success_url(self):
+        # if the deleted event had a linked personnel, go back to their detail page
+        if self.object.personnel:
+            return reverse_lazy('personnel_detail', kwargs={'dn': self.object.personnel.dn})
+        # otherwise, fall back to a generic list
+        return reverse_lazy('personnel_list')
+
 
 
 from django.shortcuts import render, get_object_or_404
