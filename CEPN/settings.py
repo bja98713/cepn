@@ -27,7 +27,7 @@ LOGOUT_REDIRECT_URL = '/acceuil/'
 
 SECRET_KEY = 'django-insecure-<your-secret-key>'
 DEBUG = True
-ALLOWED_HOSTS = ['www.cmpnpf.com']
+ALLOWED_HOSTS = ['www.cmpnpf.com','127.0.0.1']
 
 # Application definition
 
