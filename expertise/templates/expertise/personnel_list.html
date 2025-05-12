@@ -101,7 +101,7 @@
   </form>
 
   <!-- Tableau de la liste des personnels -->
-  <table>
+  <table id="personnelTable">
     <thead>
       <tr>
         <th>DN</th>
@@ -248,5 +248,58 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   });
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('personnelTable');
+    const headers = table.querySelectorAll('th');
+    const tbody = table.querySelector('tbody');
+
+    // Initialisation de l'ordre de tri sur chaque colonne
+    headers.forEach(th => th.dataset.order = 'asc');
+
+    headers.forEach((th, index) => {
+      // Ignorer la colonne Actions (dernière)
+      if (index === headers.length - 1) return;
+
+      th.style.cursor = 'pointer';  // Indicateur visuel
+      th.addEventListener('click', function() {
+        const order = th.dataset.order;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const isDateCol = th.textContent.trim() === 'Date de naissance';
+
+        rows.sort((rowA, rowB) => {
+          let aText = rowA.children[index].textContent.trim();
+          let bText = rowB.children[index].textContent.trim();
+
+          if (isDateCol) {
+            // Parser jj/mm/aaaa
+            const [ad, am, ay] = aText.split('/');
+            const [bd, bm, by] = bText.split('/');
+            const aDate = new Date(ay, am - 1, ad);
+            const bDate = new Date(by, bm - 1, bd);
+            return order === 'asc' ? aDate - bDate : bDate - aDate;
+          } else {
+            // Essayer numérique
+            const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+            const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return order === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+            // Sinon comparer chaîne
+            return order === 'asc'
+              ? aText.localeCompare(bText, 'fr', { sensitivity: 'base' })
+              : bText.localeCompare(aText, 'fr', { sensitivity: 'base' });
+          }
+        });
+
+        // Réinjecter les lignes triées
+        rows.forEach(row => tbody.appendChild(row));
+
+        // Inverser l'ordre pour le prochain clic
+        th.dataset.order = order === 'asc' ? 'desc' : 'asc';
+      });
+    });
+  });
+  </script>
 </body>
 </html>
