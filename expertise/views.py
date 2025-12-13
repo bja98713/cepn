@@ -227,7 +227,7 @@ def download_bordereau(request, mois, annee, iata):
 
     doc = Document()
 
-    para = doc.add_heading('Centre Médical du Personnel Naviguant de Polynésie française', level=1)
+    para = doc.add_heading('Centre Médical du Personnel Navigant de Polynésie française', level=1)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para = doc.add_heading('Dr. Christian Hellec', level=1)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -280,11 +280,12 @@ def download_bordereau(request, mois, annee, iata):
         f"\nNombre de factures : {evenements.count()} | Total général : {total_general:,} XPF ({total_lettres})"
     )
     doc.add_paragraph("Dr. Christian HELLEC")
+    doc.add_paragraph("IBAN : FR76 1223 9000 0162 2887 0100 014")
 
     # Factures individuelles
     for e in evenements:
         doc.add_page_break()
-        para = doc.add_heading('Centre Médical du Personnel Naviguant de POlynésie française', level=1)
+        para = doc.add_heading('Centre Médical du Personnel Navigant de Polynésie française', level=1)
         para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         para = doc.add_heading('Dr. Christian Hellec', level=1)
         para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -295,6 +296,8 @@ def download_bordereau(request, mois, annee, iata):
         para = doc.add_heading('mel : cmpnpf@gmail.com | Tel : +689.87.77.05.18 | Tel : +689.87.71.50.90', level=2)
         para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         para = doc.add_heading('Facture Individuelle', level=2)
+        para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        para = doc.add_heading(f"{compagnie.nom}", level=2)
         para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         para = doc.add_heading('--------------------', level=2)
         para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
@@ -318,6 +321,7 @@ def download_bordereau(request, mois, annee, iata):
             ("Biologie urinaire", e.cs_lbx, e.date_cs_lbx, e.medecin_labo, e.honoraire_cs_lbx),
             ("Toxicologie", e.cs_toxique, e.date_evenement, e.medecin_labo, e.honoraire_cs_toxique),
             ("Radiologie", e.cs_radio, e.date_cs_radio, e.medecin_radio, e.honoraire_cs_radio),
+            ("Frais de dossier", e.cs_cempn, e.date_cempn, e.medecin_cempn, e.frais_dossier),
         ]
 
         # Optionnel si ce champ existe dans ton modèle :
@@ -352,6 +356,7 @@ def download_bordereau(request, mois, annee, iata):
         doc.add_paragraph(f"\n💰 Total : {e.total or 0:,} XPF")
         doc.add_paragraph(f"🧾 Payé par le patient : {e.paye_par_patient or 0:,} XPF")
         doc.add_paragraph("Dr. Christian HELLEC")
+        doc.add_paragraph("IBAN : FR76 1223 9000 0162 2887 0100 014")
 
     # Générer le fichier en réponse HTTP
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -698,7 +703,7 @@ def telecharger_facture_medecin(request, bordereau_no, medecin_id):
     )
 
     doc = Document()
-    para = doc.add_heading('Centre Médical du Personnel Naviguant de Polynésie française', level=1)
+    para = doc.add_heading('Centre Médical du Personnel Navigant de Polynésie française', level=1)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para = doc.add_heading('Dr. Christian Hellec', level=1)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER

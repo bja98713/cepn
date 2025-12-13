@@ -80,11 +80,11 @@ class FicheEvenement(models.Model):
     honoraire_cempn = models.IntegerField("CEMPN = 10000", default=0)
     honoraire_cs_oph = models.IntegerField("OPH = 10600", default=0)
     honoraire_cs_orl = models.IntegerField("ORL = 13250", default=0)
-    honoraire_cs_labo = models.IntegerField("Labo AMJ = 5529", default=0)
+    honoraire_cs_labo = models.IntegerField("Labo AMJ = 7122", default=0)
     honoraire_cs_lbx = models.IntegerField("Labstix = 2337", default=0)
     honoraire_cs_radio = models.IntegerField("Radio = 8400", default=0)
-    honoraire_cs_toxique = models.IntegerField("Toxique = 16644", default=0)
-    frais_dossier = models.IntegerField("Frais de dossier = 3000", default=0)
+    honoraire_cs_toxique = models.IntegerField("Toxique = 17442", default=0)
+    frais_dossier = models.IntegerField("Frais de dossier = 3000", default=3000)
 
     # Consultations
     cs_cempn = models.BooleanField(default=False)
