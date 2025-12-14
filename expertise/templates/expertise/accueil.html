@@ -91,6 +91,11 @@
     <div class="container">
         <ul>
             <li><a href="{% url 'personnel_list' %}">👤 Accès à la Liste du Personnel Naviguant</a></li>
+          <li><a href="{% url 'facture_search' %}">🔍 Recherche par facture</a></li>
+            <li><a href="{% url 'facture_par_compagnie' %}">✈️ Recherche de factures par compagnie</a></li>
+            <li><a href="{% url 'bordereau_par_compagnie' %}">🧾 Recherche de bordereaux par compagnie</a></li>
+            <li><a href="{% url 'relance_factures' %}">📬 Procédure de relance (Factures &gt; 6 mois)</a></li>
+          <li><a href="{% url 'export_evenements_excel' %}">📄 Export général Excel</a></li>
             <li><a href="{% url 'admin:index' %}">⚙️ Administration (Django Admin)</a></li>
         </ul>
 

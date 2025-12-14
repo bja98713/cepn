@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Recherche de facture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+        .search-box {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+        .search-form input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .search-form button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        .search-form button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .results h2 {
+            margin-top: 0;
+        }
+        .results ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .results li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .results li:last-child {
+            border-bottom: none;
+        }
+        .selection-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .selection-form select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .facture-card {
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+        }
+        .facture-card h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .facture-details p {
+            margin: 6px 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+        .badge-green {
+            background-color: #28a745;
+        }
+        .badge-red {
+            background-color: #dc3545;
+        }
+        .btn-toggle {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-toggle.green {
+            background-color: #28a745;
+        }
+        .btn-toggle.red {
+            background-color: #dc3545;
+        }
+        .btn-toggle:hover {
+            opacity: 0.9;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="{% url 'accueil' %}">← Retour à l'accueil</a>
+        <h1>Recherche de facture</h1>
+
+        <div class="search-box">
+            <form class="search-form" method="get">
+                <input type="text" name="q" placeholder="Numéro de facture" value="{{ search_query }}" />
+                <button type="submit">Rechercher</button>
+            </form>
+        </div>
+
+        <div class="results">
+            <h2>Factures disponibles ({{ matches|length }})</h2>
+            {% if matches %}
+                <form method="get" class="selection-form">
+                    <input type="hidden" name="q" value="{{ search_query }}" />
+                    <label for="facture-select"><strong>Choisissez une facture :</strong></label>
+                    <select id="facture-select" name="facture" onchange="this.form.submit()">
+                        <option value="">-- Sélectionner --</option>
+                        {% for facture in matches %}
+                            <option value="{{ facture.no_facture }}" {% if selected_facture and selected_facture.no_facture == facture.no_facture %}selected{% endif %}>
+                                {{ facture.no_facture }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <noscript>
+                        <button type="submit">Afficher</button>
+                    </noscript>
+                </form>
+            {% else %}
+                <p>Aucune facture enregistrée.</p>
+            {% endif %}
+        </div>
+
+        {% if selected_facture %}
+            <div class="facture-card">
+                <h2>Facture : {{ selected_facture.no_facture }}</h2>
+                <div class="facture-details">
+                    <p><strong>Nom :</strong> {{ selected_facture.personnel.nom }}</p>
+                    <p><strong>Prénom :</strong> {{ selected_facture.personnel.prenom }}</p>
+                    <p><strong>Total :</strong> {{ selected_facture.total }} XPF</p>
+                    <p><strong>Statut :</strong>
+                        <span class="badge {% if selected_facture.paiement %}badge-green{% else %}badge-red{% endif %}">
+                            {{ statut_label }}
+                        </span>
+                    </p>
+                    <p><strong>Compagnie :</strong>
+                        {% if selected_facture.personnel.compagnie %}
+                            {{ selected_facture.personnel.compagnie.nom }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </p>
+                </div>
+                <form method="post" action="{% url 'toggle_facture_paiement' selected_facture.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                    <button type="submit" class="btn-toggle {% if selected_facture.paiement %}green{% else %}red{% endif %}">
+                        Virement
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

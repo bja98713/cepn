@@ -25,7 +25,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('export/excel/', views.export_evenements_excel, name='export_evenements_excel'),
     path('', views.accueil, name='accueil'),  # ta vue d'accueil protégée
+    path('factures/recherche/', views.facture_search, name='facture_search'),
+    path('factures/par-compagnie/', views.facture_par_compagnie, name='facture_par_compagnie'),
+    path('bordereaux/par-compagnie/', views.bordereau_par_compagnie, name='bordereau_par_compagnie'),
+    path('relance/', views.relance_factures, name='relance_factures'),
     path('personnels/', PersonnelListView.as_view(), name='personnel_list'),
     path('personnels/add/', PersonnelCreateView.as_view(), name='personnel_add'),
     path('personnels/<str:dn>/', PersonnelDetailView.as_view(), name='personnel_detail'),
@@ -46,4 +51,5 @@ urlpatterns = [
     path('bordereau/<str:no_bordereau>/factures-medecins/', views.factures_medecins_bordereau, name='factures_medecins_bordereau'),
     path('bordereau/<int:id>/toggle_virement/', views.toggle_virement, name='toggle_virement'),
     path('bordereau/<str:bordereau_no>/medecin/<int:medecin_id>/telecharger/', views.telecharger_facture_medecin, name='telecharger_facture_medecin'),
+    path('factures/<int:pk>/toggle-paiement/', views.toggle_facture_paiement, name='toggle_facture_paiement'),
 ]

@@ -7,7 +7,8 @@ from django.db.models import Q, Sum
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
+from collections import defaultdict
 from num2words import num2words
 from docx import Document
 from docx.shared import Pt
@@ -16,7 +17,9 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 import barcode
 import io
 import base64
+import pandas as pd
 from barcode.writer import ImageWriter
+from django.views.decorators.http import require_POST
 from .models import FicheEvenement, PersonnelNavigant, CompagnieAerienne, Bordereau, FactureMedecin
 from .forms import BordereauSelectionForm
 from django.db import models
@@ -595,48 +598,75 @@ def bordereau_factures(request, no_bordereau):
 
 from django.shortcuts import redirect, get_object_or_404
 from .models import Bordereau
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponseRedirect
-
-@csrf_exempt
-#from django.db.models import Sum
-#from .models import FactureMedecin  # n'oublie pas d'importer
-
+@login_required(login_url='/login/')
+@require_POST
 def toggle_virement(request, id):
     bordereau = get_object_or_404(Bordereau, id=id)
     bordereau.virement = not bordereau.virement
-    bordereau.save()
+    bordereau.save(update_fields=['virement'])
 
-    # 💡 Création des factures pour les médecins si virement = True
-    if bordereau.virement:
-        evenements = bordereau.evenements.select_related(
-            'medecin_cempn', 'medecin_oph', 'medecin_orl',
-            'medecin_radio', 'medecin_labo'
-        )
+    evenements_qs = bordereau.evenements.select_related(
+        'medecin_cempn', 'medecin_oph', 'medecin_orl',
+        'medecin_radio', 'medecin_labo', 'personnel__compagnie'
+    )
 
+    evenements = list(evenements_qs)
+
+    if evenements:
+        if bordereau.virement:
+            today = timezone.now().date()
+            for evenement in evenements:
+                updated_fields = []
+                if not evenement.paiement:
+                    evenement.paiement = True
+                    updated_fields.append('paiement')
+                if not evenement.date_paiement:
+                    evenement.date_paiement = today
+                    updated_fields.append('date_paiement')
+                if updated_fields:
+                    evenement.save(update_fields=updated_fields)
+        else:
+            for evenement in evenements:
+                updated_fields = []
+                if evenement.paiement:
+                    evenement.paiement = False
+                    updated_fields.append('paiement')
+                if evenement.date_paiement is not None:
+                    evenement.date_paiement = None
+                    updated_fields.append('date_paiement')
+                if updated_fields:
+                    evenement.save(update_fields=updated_fields)
+
+    FactureMedecin.objects.filter(bordereau=bordereau).delete()
+
+    if bordereau.virement and evenements:
         honoraires_medecins = {}
 
-        for e in evenements:
+        for evenement in evenements:
             for champ, montant in [
-                (e.medecin_cempn, e.honoraire_cempn),
-                (e.medecin_oph, e.honoraire_cs_oph),
-                (e.medecin_orl, e.honoraire_cs_orl),
-                (e.medecin_radio, e.honoraire_cs_radio),
-                (e.medecin_labo, e.honoraire_cs_labo),
-                (e.medecin_labo, e.honoraire_cs_lbx),
-                (e.medecin_labo, e.honoraire_cs_toxique),
+                (evenement.medecin_cempn, evenement.honoraire_cempn),
+                (evenement.medecin_oph, evenement.honoraire_cs_oph),
+                (evenement.medecin_orl, evenement.honoraire_cs_orl),
+                (evenement.medecin_radio, evenement.honoraire_cs_radio),
+                (evenement.medecin_labo, evenement.honoraire_cs_labo),
+                (evenement.medecin_labo, evenement.honoraire_cs_lbx),
+                (evenement.medecin_labo, evenement.honoraire_cs_toxique),
             ]:
                 if champ:
                     honoraires_medecins.setdefault(champ, 0)
                     honoraires_medecins[champ] += montant or 0
 
-        for medecin, total in honoraires_medecins.items():
-            FactureMedecin.objects.create(
-                medecin=medecin,
-                bordereau=bordereau,
-                montant=total
-            )
+        factures_medecins = [
+            FactureMedecin(medecin=medecin, bordereau=bordereau, montant=total)
+            for medecin, total in honoraires_medecins.items()
+        ]
 
+        if factures_medecins:
+            FactureMedecin.objects.bulk_create(factures_medecins)
+
+    next_url = request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect('liste_bordereaux')
 
 
@@ -658,6 +688,251 @@ def factures_medecins_bordereau(request, no_bordereau):
         'factures': factures,
     })
 
+
+@login_required(login_url='/login/')
+def export_evenements_excel(request):
+    evenements = (
+        FicheEvenement.objects
+        .select_related('personnel__compagnie')
+        .order_by('date_evenement', 'personnel__nom', 'personnel__prenom')
+    )
+
+    rows = []
+    for evenement in evenements:
+        personnel = evenement.personnel
+        compagnie = personnel.compagnie if personnel else None
+
+        rows.append({
+            'Date': evenement.date_evenement.strftime('%d/%m/%Y') if evenement.date_evenement else '',
+            'Nom': personnel.nom if personnel else '',
+            'Prenom': personnel.prenom if personnel else '',
+            'Date de naissance': personnel.date_de_naissance.strftime('%d/%m/%Y') if personnel and personnel.date_de_naissance else '',
+            'Numero de facture': evenement.no_facture or '',
+            'Total de la facture': evenement.total or 0,
+            'Statut facture': 'Payée' if evenement.paiement else 'Non payée',
+            'Statut': personnel.get_statut_pn_display() if personnel and personnel.statut_pn else '',
+            'Compagnie': compagnie.nom if compagnie else '',
+        })
+
+    df = pd.DataFrame(rows, columns=[
+        'Date',
+        'Nom',
+        'Prenom',
+        'Date de naissance',
+        'Numero de facture',
+        'Total de la facture',
+        'Statut facture',
+        'Statut',
+        'Compagnie',
+    ])
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Factures')
+
+    buffer.seek(0)
+
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="export_factures.xlsx"'
+    return response
+
+
+@login_required(login_url='/login/')
+def facture_search(request):
+    search_query = (request.GET.get('q') or '').strip()
+    selected_number = (request.GET.get('facture') or '').strip()
+
+    matches_qs = (
+        FicheEvenement.objects
+        .select_related('personnel__compagnie')
+        .order_by('no_facture')
+    )
+
+    if search_query:
+        matches_qs = matches_qs.filter(no_facture__icontains=search_query)
+
+    matches = list(matches_qs)
+
+    selected_facture = None
+    if selected_number:
+        selected_facture = next((f for f in matches if f.no_facture == selected_number), None)
+    elif search_query and len(matches) == 1:
+        selected_facture = matches[0]
+
+    statut_label = None
+    if selected_facture:
+        statut_label = 'Payée' if selected_facture.paiement else 'Non payée'
+
+    return render(request, 'expertise/facture_search.html', {
+        'search_query': search_query,
+        'matches': matches,
+        'selected_facture': selected_facture,
+        'statut_label': statut_label,
+    })
+
+
+@login_required(login_url='/login/')
+@require_POST
+def toggle_facture_paiement(request, pk):
+    facture = get_object_or_404(FicheEvenement, pk=pk)
+    facture.paiement = not facture.paiement
+    if facture.paiement and not facture.date_paiement:
+        facture.date_paiement = timezone.now().date()
+    elif not facture.paiement:
+        facture.date_paiement = None
+
+    facture.save(update_fields=['paiement', 'date_paiement'])
+
+    next_url = request.POST.get('next') or reverse('facture_search')
+    return redirect(next_url)
+
+
+@login_required(login_url='/login/')
+def facture_par_compagnie(request):
+    compagnies = CompagnieAerienne.objects.order_by('nom')
+    selected_compagnie_id = (request.GET.get('compagnie') or '').strip()
+    selected_facture_no = (request.GET.get('facture') or '').strip()
+
+    selected_compagnie = None
+    if selected_compagnie_id:
+        selected_compagnie = compagnies.filter(pk=selected_compagnie_id).first()
+
+    factures_qs = FicheEvenement.objects.none()
+    if selected_compagnie:
+        factures_qs = (
+            FicheEvenement.objects
+            .select_related('personnel__compagnie')
+            .filter(personnel__compagnie=selected_compagnie)
+            .order_by('no_facture')
+        )
+
+    factures = list(factures_qs)
+
+    selected_facture = None
+    if selected_facture_no:
+        selected_facture = next((f for f in factures if f.no_facture == selected_facture_no), None)
+    elif factures and len(factures) == 1:
+        selected_facture = factures[0]
+
+    statut_label = None
+    if selected_facture:
+        statut_label = 'Payée' if selected_facture.paiement else 'Non payée'
+
+    return render(request, 'expertise/facture_par_compagnie.html', {
+        'compagnies': compagnies,
+        'selected_compagnie': selected_compagnie,
+        'factures': factures,
+        'selected_facture': selected_facture,
+        'statut_label': statut_label,
+    })
+
+
+@login_required(login_url='/login/')
+def bordereau_par_compagnie(request):
+    compagnies = CompagnieAerienne.objects.order_by('nom')
+    selected_compagnie_id = (request.GET.get('compagnie') or '').strip()
+    selected_bordereau_id = (request.GET.get('bordereau') or '').strip()
+
+    selected_compagnie = None
+    if selected_compagnie_id:
+        selected_compagnie = compagnies.filter(pk=selected_compagnie_id).first()
+
+    bordereaux_qs = Bordereau.objects.none()
+    if selected_compagnie:
+        bordereaux_qs = Bordereau.objects.filter(
+            evenements__personnel__compagnie=selected_compagnie
+        ).distinct().order_by('-date_bordereau', 'no_bordereau')
+
+    bordereaux = list(bordereaux_qs)
+
+    selected_bordereau = None
+    if selected_bordereau_id:
+        selected_bordereau = next((b for b in bordereaux if str(b.id) == selected_bordereau_id), None)
+    elif len(bordereaux) == 1:
+        selected_bordereau = bordereaux[0]
+
+    factures = []
+    if selected_bordereau:
+        factures = list(
+            FicheEvenement.objects
+            .select_related('personnel__compagnie')
+            .filter(bordereau=selected_bordereau)
+            .order_by('no_facture')
+        )
+
+    return render(request, 'expertise/bordereau_par_compagnie.html', {
+        'compagnies': compagnies,
+        'selected_compagnie': selected_compagnie,
+        'bordereaux': bordereaux,
+        'selected_bordereau': selected_bordereau,
+        'factures': factures,
+    })
+
+
+@login_required(login_url='/login/')
+def relance_factures(request):
+    cutoff_date = timezone.now().date() - timedelta(days=180)
+
+    impayes_qs = (
+        FicheEvenement.objects
+        .select_related('personnel__compagnie', 'bordereau', 'personnel')
+        .filter(paiement=False, date_evenement__isnull=False, date_evenement__lte=cutoff_date)
+        .order_by('personnel__compagnie__nom', 'bordereau__no_bordereau', 'no_facture')
+    )
+
+    company_rows = defaultdict(list)
+    company_totals = defaultdict(int)
+    company_refs = {}
+
+    for evenement in impayes_qs:
+        compagnie = evenement.personnel.compagnie if evenement.personnel else None
+        key = compagnie.id if compagnie else 'none'
+
+        company_refs[key] = compagnie
+        company_rows[key].append({
+            'bordereau_no': evenement.bordereau.no_bordereau if evenement.bordereau else '',
+            'bordereau': evenement.bordereau,
+            'facture': evenement.no_facture or 'N/A',
+            'date_evenement': evenement.date_evenement,
+            'total': evenement.total or 0,
+        })
+        company_totals[key] += evenement.total or 0
+
+    def sort_key(k):
+        compagnie = company_refs.get(k)
+        if compagnie:
+            nom = compagnie.nom.lower()
+            iata = (compagnie.iata or '').lower()
+        else:
+            nom = 'zzz_compagnie_non_renseignee'
+            iata = ''
+        return (nom, iata)
+
+    grouped_companies = []
+    for key in sorted(company_rows.keys(), key=sort_key):
+        compagnie = company_refs.get(key)
+        rows = company_rows[key]
+        rows_sorted = sorted(rows, key=lambda r: (r['bordereau_no'], r['facture']))
+        grouped_companies.append({
+            'compagnie': compagnie,
+            'rows': rows_sorted,
+            'total': company_totals[key],
+        })
+
+    total_global = sum(company_totals.values())
+
+    return render(request, 'expertise/relance_factures.html', {
+        'generated_at': timezone.now(),
+        'cutoff_date': cutoff_date,
+        'grouped_companies': grouped_companies,
+        'total_global': total_global,
+    })
+
+
+from django.shortcuts import get_object_or_404, redirect
 
 
 from django.shortcuts import get_object_or_404, redirect

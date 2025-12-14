@@ -103,24 +103,21 @@
         <tbody>
             {% for bordereau in bordereaux %}
             <tr>
-                <td>
-                    <a href="{% url 'factures_bordereau' bordereau.no_bordereau %}">
-                        {{ bordereau.no_bordereau }}
-                    </a>
-                </td>
+              <td>{{ bordereau.no_bordereau }}</td>
                 <td>{{ bordereau.date_bordereau|date:"d/m/Y" }}</td>
                 <td>{{ bordereau.nb_factures }}</td>
                 <td>{{ bordereau.total_general }}</td>
                 <td>
                     <form method="post" action="{% url 'toggle_virement' bordereau.id %}">
                         {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
                         <button type="submit" style="background-color: {% if bordereau.virement %}lightgreen{% else %}#ffcccc{% endif %};">
                             {% if bordereau.virement %}Oui{% else %}Non{% endif %}
                         </button>
                     </form>
                 </td>
                 <td>
-                    <a href="{% url 'bordereau_detail' annee=bordereau.date_bordereau.year mois=bordereau.date_bordereau.month iata=bordereau.no_bordereau|slice:'-3:' %}">
+                  <a href="{% url 'factures_bordereau' bordereau.no_bordereau %}">
                         Voir
                     </a>
                 </td>
