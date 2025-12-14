@@ -855,13 +855,16 @@ def bordereau_par_compagnie(request):
         selected_bordereau = bordereaux[0]
 
     factures = []
+    bordereau_total = 0
     if selected_bordereau:
-        factures = list(
+        factures_qs = (
             FicheEvenement.objects
             .select_related('personnel__compagnie')
             .filter(bordereau=selected_bordereau)
             .order_by('no_facture')
         )
+        bordereau_total = factures_qs.aggregate(total_sum=Sum('total'))['total_sum'] or 0
+        factures = list(factures_qs)
 
     return render(request, 'expertise/bordereau_par_compagnie.html', {
         'compagnies': compagnies,
@@ -869,6 +872,7 @@ def bordereau_par_compagnie(request):
         'bordereaux': bordereaux,
         'selected_bordereau': selected_bordereau,
         'factures': factures,
+        'bordereau_total': bordereau_total,
     })
 
 
@@ -990,7 +994,7 @@ def telecharger_facture_medecin(request, bordereau_no, medecin_id):
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para = doc.add_heading('--------------------', level=2)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    para = doc.add_heading(f"Facture pour le Dr {medecin.nom} {medecin.prenom}", level=2)
+    para = doc.add_heading(f"Honoraires pour le Dr {medecin.nom} {medecin.prenom}", level=2)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     para = doc.add_heading('--------------------', level=2)
     para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
