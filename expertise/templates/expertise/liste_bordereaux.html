@@ -1,149 +1,58 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Liste des bordereaux</title>
-</head>
-<style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f8f8f8;
-      color: #333;
-    }
-    /* Style pour l'en-tête principal */
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      color: #007bff;
-      font-size: 2em;
-      margin: 0;
-    }
-    .header h2 {
-      color: #007bff;
-      font-size: 1.2em;
-      margin: 5px 0 0 0;
-      font-weight: normal;
-    }
-    /* Sous-titre pour la liste */
-    h3 {
-      color: #333;
-      text-align: center;
-      margin-top: 20px;
-    }
-    /* Styles pour le formulaire de recherche */
-    .search-form {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .search-form input[type="text"] {
-      padding: 8px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .search-form button {
-      padding: 8px 12px;
-      border: none;
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .search-form button:hover {
-      background-color: #0056b3;
-    }
-    /* Styles pour le tableau */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: #fff;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .action-links a {
-      margin: 0 5px;
-      color: #007bff;
-      text-decoration: none;
-    }
-    .action-links a:hover {
-      text-decoration: underline;
-    }
-  </style>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>📄 Liste des bordereaux</h1>
+{% extends 'expertise/layout.html' %}
+{% block title %}Liste des bordereaux{% endblock %}
+{% block page_icon %}📄{% endblock %}
+{% block page_title %}Bordereaux enregistrés{% endblock %}
+{% block page_subtitle %}Suivez vos envois, contrôlez les virements et accédez au détail factures.{% endblock %}
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>📄 Numéro</th>
-                <th>📅 Date</th>
-                <th>📦 Nb factures</th>
-                <th>💵 Total (XPF)</th>
-                <th>💰 Virement</th>
-                <th>🔍 Détail</th>
-                <th>🧾 Factures médecins</th>
-                <th>🗑️ Supprimer</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for bordereau in bordereaux %}
-            <tr>
-              <td>{{ bordereau.no_bordereau }}</td>
-                <td>{{ bordereau.date_bordereau|date:"d/m/Y" }}</td>
-                <td>{{ bordereau.nb_factures }}</td>
-                <td>{{ bordereau.total_general }}</td>
-                <td>
-                    <form method="post" action="{% url 'toggle_virement' bordereau.id %}">
-                        {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                        <button type="submit" style="background-color: {% if bordereau.virement %}lightgreen{% else %}#ffcccc{% endif %};">
-                            {% if bordereau.virement %}Oui{% else %}Non{% endif %}
-                        </button>
-                    </form>
-                </td>
-                <td>
-                  <a href="{% url 'factures_bordereau' bordereau.no_bordereau %}">
-                        Voir
-                    </a>
-                </td>
-                <td>
-                    <a href="{% url 'factures_medecins_bordereau' bordereau.no_bordereau %}">
-                        Voir
-                    </a>
-                </td>
-                <td>
-                    <form method="post" action="{% url 'supprimer_bordereau' bordereau.id %}">
-                        {% csrf_token %}
-                        <button type="submit" onclick="return confirm('Supprimer ce bordereau ?')">🗑️</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8">Aucun bordereau disponible.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <p style="margin-top: 20px;">
-        <a href="{% url 'personnel_list' %}">🏠 Retour à l’accueil</a>
-    </p>
-</body>
-</html>
+{% block content %}
+    <section class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Numéro</th>
+                    <th>Date</th>
+                    <th>Factures</th>
+                    <th>Total (XPF)</th>
+                    <th>Virement</th>
+                    <th>Détail</th>
+                    <th>Factures médecins</th>
+                    <th>Supprimer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bordereau in bordereaux %}
+                    <tr>
+                        <td>{{ bordereau.no_bordereau }}</td>
+                        <td>{{ bordereau.date_bordereau|date:"d/m/Y" }}</td>
+                        <td>{{ bordereau.nb_factures }}</td>
+                        <td>{{ bordereau.total_general }}</td>
+                        <td>
+                            <div class="actions">
+                                <span class="tag {% if bordereau.virement %}tag--success{% else %}tag--danger{% endif %}">
+                                    {% if bordereau.virement %}Effectué{% else %}Non effectué{% endif %}
+                                </span>
+                                <form method="post" action="{% url 'toggle_virement' bordereau.id %}" class="inline-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-secondary btn--small">Basculer</button>
+                                </form>
+                            </div>
+                        </td>
+                        <td><a class="btn btn-secondary btn--small" href="{% url 'factures_bordereau' bordereau.no_bordereau %}">Voir</a></td>
+                        <td><a class="btn btn-secondary btn--small" href="{% url 'factures_medecins_bordereau' bordereau.no_bordereau %}">Voir</a></td>
+                        <td>
+                            <form method="post" action="{% url 'supprimer_bordereau' bordereau.id %}" class="inline-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn--small" onclick="return confirm('Supprimer ce bordereau ?')">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty-state">Aucun bordereau disponible pour le moment.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

@@ -1,114 +1,15 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Recherche de bordereaux par compagnie</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f8f8f8;
-            color: #333;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
-        .box {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        .selection-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .selection-form select {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background-color: #fff;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: #fff;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: #fff;
-        }
-        .badge-green {
-            background-color: #28a745;
-        }
-        .badge-red {
-            background-color: #dc3545;
-        }
-        .btn-toggle {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-            transition: opacity 0.2s ease-in-out;
-        }
-        .btn-toggle.green {
-            background-color: #28a745;
-        }
-        .btn-toggle.red {
-            background-color: #dc3545;
-        }
-        .btn-toggle:hover {
-            opacity: 0.9;
-        }
-        .toggle-form {
-            margin-top: 10px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <div class="container">
-        <a class="back-link" href="{% url 'accueil' %}">← Retour à l'accueil</a>
-        <h1>Recherche de bordereaux par compagnie</h1>
+{% extends 'expertise/layout.html' %}
+{% block title %}Bordereaux par compagnie{% endblock %}
+{% block page_icon %}🗂️{% endblock %}
+{% block page_title %}Bordereaux par compagnie{% endblock %}
+{% block page_subtitle %}Filtrer un transporteur, consulter les bordereaux et vérifier le statut des virements.{% endblock %}
 
-        <div class="box">
+{% block content %}
+    <section class="card-grid">
+        <article class="card">
+            <h2>Sélection de la compagnie</h2>
             <form method="get" class="selection-form">
-                <label for="compagnie-select"><strong>Compagnie :</strong></label>
+                <label for="compagnie-select">Compagnie</label>
                 <select id="compagnie-select" name="compagnie" onchange="this.form.submit()">
                     <option value="">-- Sélectionner --</option>
                     {% for compagnie in compagnies %}
@@ -118,89 +19,93 @@
                     {% endfor %}
                 </select>
                 <noscript>
-                    <button type="submit">Afficher</button>
+                    <button type="submit" class="btn btn-secondary">Afficher</button>
                 </noscript>
             </form>
-        </div>
+        </article>
 
         {% if selected_compagnie %}
-            <div class="box">
-                <h2>Bordereaux de {{ selected_compagnie.nom }}</h2>
+            <article class="card">
+                <h2>Bordereaux disponibles</h2>
                 {% if bordereaux %}
                     <form method="get" class="selection-form">
-                        <input type="hidden" name="compagnie" value="{{ selected_compagnie.id }}" />
-                        <label for="bordereau-select"><strong>Numéro de bordereau :</strong></label>
+                        <input type="hidden" name="compagnie" value="{{ selected_compagnie.id }}">
+                        <label for="bordereau-select">Numéro de bordereau</label>
                         <select id="bordereau-select" name="bordereau" onchange="this.form.submit()">
                             <option value="">-- Sélectionner --</option>
                             {% for bordereau in bordereaux %}
                                 <option value="{{ bordereau.id }}" {% if selected_bordereau and selected_bordereau.id == bordereau.id %}selected{% endif %}>
-                                    {{ bordereau.no_bordereau }} - {{ bordereau.date_bordereau|date:"d/m/Y" }}
+                                    {{ bordereau.no_bordereau }} · {{ bordereau.date_bordereau|date:"d/m/Y" }}
                                 </option>
                             {% endfor %}
                         </select>
                         <noscript>
-                            <button type="submit">Afficher</button>
+                            <button type="submit" class="btn btn-secondary">Afficher</button>
                         </noscript>
                     </form>
                 {% else %}
-                    <p>Aucun bordereau trouvé pour cette compagnie.</p>
+                    <p class="empty-state">Aucun bordereau trouvé pour cette compagnie.</p>
                 {% endif %}
-            </div>
+            </article>
         {% endif %}
+    </section>
 
-        {% if selected_bordereau %}
-            <div class="box">
-                <h2>Bordereau {{ selected_bordereau.no_bordereau }}</h2>
-                <p><strong>Date :</strong> {{ selected_bordereau.date_bordereau|date:"d/m/Y" }}</p>
-                <p><strong>Virement :</strong>
-                    <span class="badge {% if selected_bordereau.virement %}badge-green{% else %}badge-red{% endif %}">
-                        {% if selected_bordereau.virement %}Effectué{% else %}Non effectué{% endif %}
-                    </span>
-                </p>
-                <form method="post" action="{% url 'toggle_virement' selected_bordereau.id %}" class="toggle-form">
+    {% if selected_bordereau %}
+        <section class="card">
+            <header class="actions actions--spread">
+                <div>
+                    <h2>Bordereau {{ selected_bordereau.no_bordereau }}</h2>
+                    <p class="page__subtitle"><strong>Date :</strong> {{ selected_bordereau.date_bordereau|date:"d/m/Y" }}</p>
+                </div>
+                <form method="post" action="{% url 'toggle_virement' selected_bordereau.id %}" class="inline-form">
                     {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                    <button type="submit" class="btn-toggle {% if selected_bordereau.virement %}green{% else %}red{% endif %}">
-                        Virement
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn {% if selected_bordereau.virement %}btn-secondary{% endif %}">
+                        {% if selected_bordereau.virement %}✅ Virement effectué{% else %}💸 Marquer le virement{% endif %}
                     </button>
                 </form>
+            </header>
 
-                <h3>Factures associées</h3>
+            <div class="tags">
+                <span class="tag {% if selected_bordereau.virement %}tag--success{% else %}tag--danger{% endif %}">
+                    Virement : {% if selected_bordereau.virement %}Effectué{% else %}Non effectué{% endif %}
+                </span>
                 {% if factures %}
-                    <p><strong>Total du bordereau :</strong> {{ bordereau_total }} XPF</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Facture</th>
-                                <th>DN</th>
-                                <th>Nom</th>
-                                <th>Prénom</th>
-                                <th>Total (XPF)</th>
-                                <th>Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for facture in factures %}
-                                <tr>
-                                    <td>{{ facture.no_facture }}</td>
-                                    <td>{{ facture.personnel.dn }}</td>
-                                    <td>{{ facture.personnel.nom }}</td>
-                                    <td>{{ facture.personnel.prenom }}</td>
-                                    <td>{{ facture.total }}</td>
-                                    <td>
-                                        <span class="badge {% if facture.paiement %}badge-green{% else %}badge-red{% endif %}">
-                                            {% if facture.paiement %}Payée{% else %}Non payée{% endif %}
-                                        </span>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p>Aucune facture rattachée à ce bordereau.</p>
+                    <span class="tag">Total bordereau : {{ bordereau_total }} XPF</span>
                 {% endif %}
             </div>
-        {% endif %}
-    </div>
-</body>
-</html>
+
+            <h3>Factures associées</h3>
+            {% if factures %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Facture</th>
+                            <th>DN</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Total (XPF)</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for facture in factures %}
+                            <tr>
+                                <td>{{ facture.no_facture }}</td>
+                                <td>{{ facture.personnel.dn }}</td>
+                                <td>{{ facture.personnel.nom }}</td>
+                                <td>{{ facture.personnel.prenom }}</td>
+                                <td>{{ facture.total }}</td>
+                                <td>
+                                    <span class="tag {% if facture.paiement %}tag--success{% else %}tag--danger{% endif %}">{% if facture.paiement %}Payée{% else %}Non payée{% endif %}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty-state">Aucune facture rattachée à ce bordereau.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

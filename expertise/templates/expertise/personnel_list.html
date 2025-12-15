@@ -1,306 +1,233 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Liste des Personnels Navigants</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f8f8f8;
-      color: #333;
-    }
-    /* Style pour l'en-tête principal */
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      color: #007bff;
-      font-size: 2em;
-      margin: 0;
-    }
-    .header h2 {
-      color: #007bff;
-      font-size: 1.2em;
-      margin: 5px 0 0 0;
-      font-weight: normal;
-    }
-    /* Sous-titre pour la liste */
-    h3 {
-      color: #333;
-      text-align: center;
-      margin-top: 20px;
-    }
-    /* Styles pour le formulaire de recherche */
-    .search-form {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .search-form input[type="text"] {
-      padding: 8px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .search-form button {
-      padding: 8px 12px;
-      border: none;
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .search-form button:hover {
-      background-color: #0056b3;
-    }
-    /* Styles pour le tableau */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: #fff;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .action-links a {
-      margin: 0 5px;
-      color: #007bff;
-      text-decoration: none;
-    }
-    .action-links a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-  <!-- En-tête principal -->
-  <div class="header">
-    <h1>Centre Médical du Personnel Naviguant de Polynésie française</h1>
-    <h1>Dr. Christian Hellec</h1 >
-    <h2>BP 380697 | F-98718 Punaauia</h2>
-    <h2>Polynésie Française</h2>
-  </div>
+{% extends 'expertise/layout.html' %}
+{% block title %}Personnels navigants{% endblock %}
+{% block page_icon %}🧑‍✈️{% endblock %}
+{% block page_title %}Liste des personnels navigants{% endblock %}
+{% block page_subtitle %}Consulter, rechercher et gérer les dossiers CEPN.{% endblock %}
 
-  <h3>Liste des Personnels Navigants</h3>
-
-  <!-- Formulaire de recherche -->
-  <form method="get" class="search-form">
-    <input type="text" name="q" placeholder="Rechercher par nom, prénom ou DN" value="{{ request.GET.q }}">
-    <button type="submit">Rechercher</button>
-  </form>
-
-  <!-- Tableau de la liste des personnels -->
-  <table id="personnelTable">
-    <thead>
-      <tr>
-        <th>DN</th>
-        <th>Nom</th>
-        <th>Prénom</th>
-        <th>Date de naissance</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for personnel in personnels %}
-        <tr>
-          <td>{{ personnel.dn }}</td>
-          <td>{{ personnel.nom }}</td>
-          <td>{{ personnel.prenom }}</td>
-          <td>{{ personnel.date_de_naissance|date:"d/m/Y" }}</td>
-          <td class="action-links">
-            <a href="{% url 'personnel_detail' personnel.dn %}">Historique</a>
-            <a href="{% url 'personnel_edit' personnel.dn %}">Modifier</a>
-            <a href="{% url 'personnel_delete' personnel.dn %}">Supprimer</a>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5">Aucun personnel trouvé.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <p style="text-align: center;">
-    <a href="{% url 'personnel_add' %}">Ajouter un nouveau personnel</a>
-  </p>
-  <p style="text-align: center;">
-    <a href="{% url 'selectionner_bordereau' %}">Créer un bordereau</a>
-  </p>
-  <p style="text-align: center;">
-    <a href="{% url 'liste_bordereaux' %}">📄 Consulter les Bordereaux</a>
-  </p>
-  <p style="text-align: center;">
-    <a href="{% url 'admin:index' %}">Accéder à l'administration du site</a>
-  </p>
-  <p style="text-align: center;">
-    <a href="{% url 'logout' %}">Se déconnecter</a>
-  </p>
-
-<!-- 🌴 POP-UP MÉTÉO TROPICALE -->
+{% block extra_head %}
 <style>
-  #weather-alert {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e'); /* fond tropical */
-    background-size: cover;
-    color: black; /* ✅ couleur du texte */
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    z-index: 1000;
-    width: 300px;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-  }
+    .search-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+    }
+
+    .weather-card {
+        background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+        background-size: cover;
+        color: #0b2c4a;
+        position: relative;
+    }
+
+    .weather-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.75));
+        border-radius: inherit;
+        z-index: 0;
+    }
+
+    .weather-card__content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .weather-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .weather-card__close {
+        background: rgba(11, 44, 74, 0.12);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .weather-card__close:hover {
+        transform: rotate(90deg);
+    }
+
+    .table-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .search-field {
+        flex: 1 1 280px;
+    }
 </style>
-
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const city = "Papeete,PF";
-    const apiKey = "c1ffec6c4766b88a3e0df188a354923c"; // ← remplace par ta vraie clé
-    const alertBox = document.getElementById("weather-alert");
-    const contentBox = document.getElementById("weather-content");
-    const closeBtn = document.getElementById("close-weather");
+document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('weather-card');
+    if (!card) {
+        return;
+    }
+    const content = document.getElementById('weather-content');
+    const closeBtn = document.getElementById('weather-close');
+    const city = 'Papeete,PF';
+    const apiKey = 'c1ffec6c4766b88a3e0df188a354923c';
 
     fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=fr&appid=${apiKey}`)
         .then(response => response.json())
         .then(data => {
+            if (!data.weather) {
+                throw new Error('Invalid weather payload');
+            }
             const description = data.weather[0].description;
             const temp = Math.round(data.main.temp);
             const windSpeed = data.wind.speed;
             const windDeg = data.wind.deg;
-
-            const directions = ["Nord", "Nord-Est", "Est", "Sud-Est", "Sud", "Sud-Ouest", "Ouest", "Nord-Ouest"];
+            const directions = ['Nord', 'Nord-Est', 'Est', 'Sud-Est', 'Sud', 'Sud-Ouest', 'Ouest', 'Nord-Ouest'];
             const directionText = directions[Math.round(windDeg / 45) % 8];
 
-            contentBox.innerHTML = `
-                👋 Bonjour Christian !<br>
-                🌡️ <strong>${temp}°C</strong> - ${description}<br>
-                💨 <strong>Vent : ${windSpeed} m/s</strong> (${directionText})
-            `;
+            content.innerHTML = `👋 Bonjour Christian !<br>🌡️ <strong>${temp}°C</strong> — ${description}<br>💨 Vent : <strong>${windSpeed} m/s</strong> (${directionText})`;
+            card.hidden = false;
 
-            alertBox.style.display = "block";
-
-            // Disparition après 10 secondes
             setTimeout(() => {
-                alertBox.style.opacity = 1;
-                const fadeOut = setInterval(() => {
-                    if (alertBox.style.opacity > 0) {
-                        alertBox.style.opacity -= 0.05;
-                    } else {
-                        clearInterval(fadeOut);
-                        alertBox.style.display = "none";
-                    }
-                }, 100);
+                card.hidden = true;
             }, 10000);
         })
-        .catch(error => {
-            contentBox.innerHTML = "❌ Impossible de récupérer la météo.";
-            alertBox.style.display = "block";
+        .catch(() => {
+            content.textContent = '❌ Impossible de récupérer la météo.';
+            card.hidden = false;
         });
 
-    closeBtn.addEventListener("click", () => {
-        alertBox.style.display = "none";
+    closeBtn.addEventListener('click', () => {
+        card.hidden = true;
     });
 });
 </script>
-
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const city = "Papeete,PF";
-    const apiKey = "c1ffec6c4766b88a3e0df188a354923c";  // Remplace par ta vraie clé API
-
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&lang=fr&appid=${apiKey}`)
-      .then(response => response.json())
-      .then(data => {
-        const weatherDescription = data.weather[0].description;
-        const temperature = data.main.temp;
-        const windSpeed = data.wind.speed;
-        const windDirection = data.wind.deg;
-
-        const weatherMessage = `Salut Christian, \n 🌴 Météo à Papeete :
-        ${weatherDescription}, ${temperature}°C
-        💨 Vent : ${windSpeed} m/s, ${windDirection}°`;
-
-        const div = document.createElement("div");
-        div.id = "weather-alert";
-        div.textContent = weatherMessage;
-        document.body.appendChild(div);
-
-        // Disparition au bout de 10 secondes
-        setTimeout(() => {
-          div.remove();
-        }, 10000);
-      });
-  });
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('personnelTable');
+    if (!table) {
+        return;
+    }
     const headers = table.querySelectorAll('th');
     const tbody = table.querySelector('tbody');
 
-    // Initialisation de l'ordre de tri sur chaque colonne
     headers.forEach(th => th.dataset.order = 'asc');
 
     headers.forEach((th, index) => {
-      // Ignorer la colonne Actions (dernière)
-      if (index === headers.length - 1) return;
+        if (index === headers.length - 1) {
+            return;
+        }
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+            const order = th.dataset.order;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const isDateCol = th.textContent.trim() === 'Date de naissance';
 
-      th.style.cursor = 'pointer';  // Indicateur visuel
-      th.addEventListener('click', function() {
-        const order = th.dataset.order;
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const isDateCol = th.textContent.trim() === 'Date de naissance';
+            rows.sort((rowA, rowB) => {
+                const aText = rowA.children[index].textContent.trim();
+                const bText = rowB.children[index].textContent.trim();
 
-        rows.sort((rowA, rowB) => {
-          let aText = rowA.children[index].textContent.trim();
-          let bText = rowB.children[index].textContent.trim();
+                if (isDateCol) {
+                    const [ad, am, ay] = aText.split('/');
+                    const [bd, bm, by] = bText.split('/');
+                    const aDate = new Date(ay, am - 1, ad);
+                    const bDate = new Date(by, bm - 1, bd);
+                    return order === 'asc' ? aDate - bDate : bDate - aDate;
+                }
 
-          if (isDateCol) {
-            // Parser jj/mm/aaaa
-            const [ad, am, ay] = aText.split('/');
-            const [bd, bm, by] = bText.split('/');
-            const aDate = new Date(ay, am - 1, ad);
-            const bDate = new Date(by, bm - 1, bd);
-            return order === 'asc' ? aDate - bDate : bDate - aDate;
-          } else {
-            // Essayer numérique
-            const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
-            const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-              return order === 'asc' ? aNum - bNum : bNum - aNum;
-            }
-            // Sinon comparer chaîne
-            return order === 'asc'
-              ? aText.localeCompare(bText, 'fr', { sensitivity: 'base' })
-              : bText.localeCompare(aText, 'fr', { sensitivity: 'base' });
-          }
+                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+                if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+                    return order === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+
+                return order === 'asc'
+                    ? aText.localeCompare(bText, 'fr', { sensitivity: 'base' })
+                    : bText.localeCompare(aText, 'fr', { sensitivity: 'base' });
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            th.dataset.order = order === 'asc' ? 'desc' : 'asc';
         });
-
-        // Réinjecter les lignes triées
-        rows.forEach(row => tbody.appendChild(row));
-
-        // Inverser l'ordre pour le prochain clic
-        th.dataset.order = order === 'asc' ? 'desc' : 'asc';
-      });
     });
-  });
-  </script>
-</body>
-</html>
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <section class="card weather-card" id="weather-card" hidden>
+        <div class="weather-card__content">
+            <div class="weather-card__header">
+                <h2>Météo à Papeete</h2>
+                <button type="button" id="weather-close" class="weather-card__close">×</button>
+            </div>
+            <p id="weather-content">Chargement...</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <form method="get">
+            <div class="search-row">
+                <div class="form-field search-field">
+                    <label for="search-input">Rechercher un personnel</label>
+                    <input id="search-input" type="text" name="q" placeholder="Nom, prénom ou DN" value="{{ request.GET.q }}">
+                </div>
+                <div class="actions">
+                    <button type="submit">Rechercher</button>
+                    {% if request.GET.q %}
+                        <a class="btn btn-secondary" href="{% url 'personnel_list' %}">Réinitialiser</a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+        <div class="actions actions--top">
+            <a class="btn" href="{% url 'personnel_add' %}">Ajouter un personnel</a>
+            <a class="btn btn-secondary" href="{% url 'selectionner_bordereau' %}">Créer un bordereau</a>
+            <a class="btn btn-secondary" href="{% url 'liste_bordereaux' %}">Consulter les bordereaux</a>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Résultats</h2>
+        <table id="personnelTable">
+            <thead>
+                <tr>
+                    <th>DN</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Date de naissance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for personnel in personnels %}
+                    <tr>
+                        <td>{{ personnel.dn }}</td>
+                        <td>{{ personnel.nom }}</td>
+                        <td>{{ personnel.prenom }}</td>
+                        <td>{{ personnel.date_de_naissance|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="table-actions">
+                                <a class="btn btn-secondary btn--small" href="{% url 'personnel_detail' personnel.dn %}">Historique</a>
+                                <a class="btn btn-secondary btn--small" href="{% url 'personnel_edit' personnel.dn %}">Modifier</a>
+                                <a class="btn btn-secondary btn--small" href="{% url 'personnel_delete' personnel.dn %}">Supprimer</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-state">Aucun personnel trouvé.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

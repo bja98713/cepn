@@ -1,97 +1,31 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Sélection du bordereau</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f8f8f8;
-      color: #333;
-    }
-    /* Style pour l'en-tête principal */
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      color: #007bff;
-      font-size: 2em;
-      margin: 0;
-    }
-    .header h2 {
-      color: #007bff;
-      font-size: 1.2em;
-      margin: 5px 0 0 0;
-      font-weight: normal;
-    }
-    /* Sous-titre pour la liste */
-    h3 {
-      color: #333;
-      text-align: center;
-      margin-top: 20px;
-    }
-    /* Styles pour le formulaire de recherche */
-    .search-form {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .search-form input[type="text"] {
-      padding: 8px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .search-form button {
-      padding: 8px 12px;
-      border: none;
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .search-form button:hover {
-      background-color: #0056b3;
-    }
-    /* Styles pour le tableau */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: #fff;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .action-links a {
-      margin: 0 5px;
-      color: #007bff;
-      text-decoration: none;
-    }
-    .action-links a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-  <div class="header">
-  <h1>Générer un Bordereau</h1>
-  </div>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Créer le bordereau</button>
-  </form>
-</body>
-</html>
+{% extends 'expertise/layout.html' %}
+{% block title %}Créer un bordereau{% endblock %}
+{% block page_icon %}🧾{% endblock %}
+{% block page_title %}Sélection du bordereau{% endblock %}
+{% block page_subtitle %}Choisissez la période et la compagnie pour générer le document.{% endblock %}
+
+{% block content %}
+    <section class="card">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-field{% if field.errors %} form-field--error{% endif %}">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="form-field__help">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="form-field__errors">{{ field.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="actions">
+                <button type="submit">Créer le bordereau</button>
+                <a class="btn btn-secondary" href="{% url 'personnel_list' %}">Annuler</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

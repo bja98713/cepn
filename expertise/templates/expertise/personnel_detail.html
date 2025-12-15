@@ -1,107 +1,80 @@
-<!-- personnel_detail.html -->
-<!DOCTYPE html>
-<html lang="fr">
-    <style>
-        .table-evenements {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-          font-family: Arial, sans-serif;
-        }
-        .table-evenements th,
-        .table-evenements td {
-          border: 1px solid #ddd;
-          padding: 10px;
-          text-align: center;
-        }
-        .table-evenements th {
-          background-color: #007bff;
-          color: #fff;
-          font-weight: bold;
-        }
-        .table-evenements tr:nth-child(even) {
-          background-color: #f9f9f9;
-        }
-        .table-evenements tr:hover {
-          background-color: #f1f1f1;
-        }
-        .action-links a {
-          color: #007bff;
-          text-decoration: none;
-          margin: 0 5px;
-        }
-        .action-links a:hover {
-          text-decoration: underline;
-        }
-      </style>
-<head>
-    <meta charset="UTF-8">
-    <title>Détails du Personnel</title>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>{{ personnel.prenom }} {{ personnel.nom }}</h1>
-    <p><strong>DN :</strong> {{ personnel.dn }}</p>
-    <p><strong>Date de naissance :</strong> {{ personnel.date_de_naissance|date:"d/m/Y" }}</p>
-    <p><strong>Sexe :</strong> {{ personnel.get_sexe_display }}</p>
-    <p><strong>Statut :</strong> 
-      {{ personnel.get_statut_pn_display }} 
-      <!-- get_statut_pn_display affiche la valeur lisible, par ex. "PNT (Pilote)" -->
-    </p>
-    <p>Nom de la compagnie : {{ personnel.compagnie.nom }}</p>
-    <p>Code IATA : {{ personnel.compagnie.iata }}</p>
+{% extends 'expertise/layout.html' %}
+{% block title %}Fiche du personnel{% endblock %}
+{% block page_icon %}👤{% endblock %}
+{% block page_title %}{{ personnel.prenom }} {{ personnel.nom }}{% endblock %}
+{% block page_subtitle %}DN {{ personnel.dn }} — {{ personnel.get_statut_pn_display }}{% endblock %}
 
+{% block content %}
+    <section class="card">
+        <div class="stat-board">
+            <div class="stat">
+                <span>Date de naissance</span>
+                <strong>{{ personnel.date_de_naissance|date:"d/m/Y" }}</strong>
+            </div>
+            <div class="stat">
+                <span>Sexe</span>
+                <strong>{{ personnel.get_sexe_display }}</strong>
+            </div>
+            <div class="stat">
+                <span>Compagnie</span>
+                <strong>{{ personnel.compagnie.nom }}</strong>
+            </div>
+            <div class="stat">
+                <span>Code IATA</span>
+                <strong>{{ personnel.compagnie.iata }}</strong>
+            </div>
+        </div>
+        <div class="actions actions--top">
+            <a class="btn" href="{% url 'evenement_add' personnel.dn %}">Créer un nouvel événement</a>
+            <a class="btn btn-secondary" href="{% url 'personnel_edit' personnel.dn %}">Modifier le profil</a>
+            <a class="btn btn-secondary" href="{% url 'personnel_list' %}">Retour à la liste</a>
+        </div>
+    </section>
 
-
-    <h2>Événements associés</h2>
-    {% if evenements %}
-      <table class="table-evenements">
-        <thead>
-          <tr>
-            <th>Date de l'événement</th>
-            <th>Numéro de facture</th>
-            <th>Total (honoraires + frais)</th>
-            <th>Quote-part patient</th>
-            <th>Payé par le patient</th>
-            <th>Statut</th>
-            <th>Modalité de paiement</th>
-            <th>Imprimer</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for event in evenements %}
-            <tr>
-              <td>{{ event.date_evenement|date:"d/m/Y" }}</td>
-              <td>{{ event.no_facture }}</td>
-              <td>{{ event.total }} xpf</td>
-              <td>{{ event.quote_part_patient|yesno:"Oui,Non" }}</td>
-              <td>{{ event.paye_par_patient }} xpf</td>
-              <td>{% if event.paiement %}Payé{% else %}Non payé{% endif %}</td>
-              <td>{{ event.get_modalite_paiement_display }}</td>
-              <td>
-                 <a href="{% url 'facture' event.pk %}" target="_blank">Imprimer</a>
-              </td>
-              <td>
-                 <a href="{% url 'evenement_edit' event.pk %}">Modifier</a> |
-                 <a href="{% url 'evenement_delete' event.pk %}">Annuler</a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>Aucun événement enregistré pour ce personnel.</p>
-    {% endif %}
-    
-
-
-    <p>
-      <a href="{% url 'evenement_add' personnel.dn %}">Créer un nouvel événement</a>
-    </p>
-
-    <p>
-      <a href="{% url 'personnel_list' %}">Retour à la liste des personnels</a>
-    </p>
-</body>
-</html>
+    <section class="card">
+        <h2>Événements associés</h2>
+        {% if evenements %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Facture</th>
+                        <th>Total (XPF)</th>
+                        <th>Quote-part</th>
+                        <th>Payé par le patient</th>
+                        <th>Statut</th>
+                        <th>Modalité</th>
+                        <th>Impression</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in evenements %}
+                        <tr>
+                            <td>{{ event.date_evenement|date:"d/m/Y" }}</td>
+                            <td>{{ event.no_facture }}</td>
+                            <td>{{ event.total }} xpf</td>
+                            <td>{{ event.quote_part_patient|yesno:"Oui,Non" }}</td>
+                            <td>{{ event.paye_par_patient }} xpf</td>
+                            <td>
+                                <span class="tag {% if event.paiement %}tag--success{% else %}tag--danger{% endif %}">
+                                    {% if event.paiement %}Payé{% else %}Non payé{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ event.get_modalite_paiement_display }}</td>
+                            <td><a href="{% url 'facture' event.pk %}" target="_blank">Imprimer</a></td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn btn-secondary" href="{% url 'evenement_edit' event.pk %}">Modifier</a>
+                                    <a class="btn btn-secondary" href="{% url 'evenement_delete' event.pk %}">Annuler</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-state">Aucun événement enregistré pour ce personnel pour le moment.</p>
+        {% endif %}
+    </section>
+{% endblock %}

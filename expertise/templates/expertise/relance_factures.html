@@ -1,135 +1,59 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Factures non Payées (&#62; Six Mois)</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f8f8;
-            color: #333;
-            margin: 20px;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
-        h2 {
-            color: #333;
-            margin-top: 30px;
-        }
-        .intro {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        .bloc-compagnie {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            background-color: #fff;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: #fff;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .total {
-            font-weight: bold;
-            text-align: right;
-            margin-top: 10px;
-        }
-        .global-total {
-            font-weight: bold;
-            text-align: right;
-            font-size: 1.1rem;
-            margin-top: 20px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <div class="container">
-        <a class="back-link" href="{% url 'accueil' %}">← Retour à l'accueil</a>
-        <h1>Factures non Payées (&gt; Six Mois)</h1>
+{% extends 'expertise/layout.html' %}
+{% block title %}Relances factures{% endblock %}
+{% block page_icon %}📬{% endblock %}
+{% block page_title %}Factures à relancer{% endblock %}
+{% block page_subtitle %}Synthèse des impayés de plus de six mois.{% endblock %}
 
-        <div class="intro">
-            <p>Relance générée le {{ generated_at|date:"d/m/Y" }}. Les factures listées ci-dessous n'ont pas été payées depuis le {{ cutoff_date|date:"d/m/Y" }} (plus de six mois).</p>
-            <p>Utilisez ces informations pour rédiger vos courriers de relance auprès de chaque compagnie.</p>
-        </div>
+{% block content %}
+    <section class="card">
+        <p>Relance générée le {{ generated_at|date:"d/m/Y" }}. Les factures listées ci-dessous restent impayées depuis le {{ cutoff_date|date:"d/m/Y" }}. Utilisez ces informations pour préparer vos courriers auprès des compagnies.</p>
+    </section>
 
-        {% if grouped_companies %}
-            {% for group in grouped_companies %}
-                <div class="bloc-compagnie">
-                    <h2>
-                        {% if group.compagnie %}
-                            {{ group.compagnie.nom }} {% if group.compagnie.iata %}({{ group.compagnie.iata }}){% endif %}
-                        {% else %}
-                            Compagnie non renseignée
-                        {% endif %}
-                    </h2>
-                    <p class="total">Total impayé : {{ group.total }} XPF</p>
-
-                    <table>
-                        <thead>
+    {% if grouped_companies %}
+        {% for group in grouped_companies %}
+            <section class="card">
+                <header class="actions actions--spread">
+                    <div>
+                        <h2>
+                            {% if group.compagnie %}
+                                {{ group.compagnie.nom }} {% if group.compagnie.iata %}({{ group.compagnie.iata }}){% endif %}
+                            {% else %}
+                                Compagnie non renseignée
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <span class="tag tag--danger">Total impayé : {{ group.total }} XPF</span>
+                </header>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Numéro de bordereau</th>
+                            <th>Numéro de facture</th>
+                            <th>Date de l'acte</th>
+                            <th>Montant (XPF)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in group.rows %}
                             <tr>
-                                <th>Numéro de bordereau</th>
-                                <th>Numéro de facture</th>
-                                <th>Date de l'acte</th>
-                                <th>Montant (XPF)</th>
+                                <td>{% if row.bordereau %}{{ row.bordereau.no_bordereau }}{% else %}—{% endif %}</td>
+                                <td>{{ row.facture }}</td>
+                                <td>{{ row.date_evenement|date:"d/m/Y" }}</td>
+                                <td>{{ row.total }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in group.rows %}
-                                <tr>
-                                    <td>{% if row.bordereau %}{{ row.bordereau.no_bordereau }}{% else %}—{% endif %}</td>
-                                    <td>{{ row.facture }}</td>
-                                    <td>{{ row.date_evenement|date:"d/m/Y" }}</td>
-                                    <td>{{ row.total }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        {% endfor %}
 
-            <div class="global-total">
-                Total global à relancer : {{ total_global }} XPF
-            </div>
-        {% else %}
-            <p>Aucune facture n'est en retard de paiement de plus de six mois. 🎉</p>
-        {% endif %}
-    </div>
-</body>
-</html>
+        <section class="card">
+            <h2>Total global</h2>
+            <p class="data-list__value">{{ total_global }} XPF à relancer</p>
+        </section>
+    {% else %}
+        <section class="card">
+            <p class="empty-state">Aucune facture n'est en retard de paiement de plus de six mois. 🎉</p>
+        </section>
+    {% endif %}
+{% endblock %}

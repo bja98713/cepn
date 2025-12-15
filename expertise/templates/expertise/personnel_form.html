@@ -1,74 +1,31 @@
-<!DOCTYPE html>
-<html lang="fr">
-    <style>
-        body {
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          background-color: #f8f8f8;
-          color: #333;
-        }
-        h1 {
-          color: #007bff;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-          background-color: #fff;
-        }
-        th, td {
-          padding: 10px;
-          border: 1px solid #ddd;
-          text-align: center;
-        }
-        th {
-          background-color: #007bff;
-          color: #fff;
-        }
-        tr:nth-child(even) {
-          background-color: #f2f2f2;
-        }
-        .action-links a {
-          margin: 0 5px;
-          color: #007bff;
-          text-decoration: none;
-        }
-        .action-links a:hover {
-          text-decoration: underline;
-        }
-        .search-form {
-          margin-bottom: 20px;
-        }
-        .search-form input[type="text"] {
-          padding: 8px;
-          width: 300px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-        }
-        .search-form button {
-          padding: 8px 12px;
-          border: none;
-          background-color: #007bff;
-          color: #fff;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .search-form button:hover {
-          background-color: #0056b3;
-        }
-      </style>
-<head>
-    <meta charset="UTF-8">
-    <title>{% if object %}Modifier{% else %}Ajouter{% endif %} un Personnel Navigant</title>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>{% if object %}Modifier{% else %}Ajouter{% endif %} un Personnel Navigant</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Enregistrer</button>
-    </form>
-    <a href="{% url 'personnel_list' %}">Annuler</a>
-</body>
-</html>
+{% extends 'expertise/layout.html' %}
+{% block title %}{% if object %}Modifier{% else %}Ajouter{% endif %} un personnel{% endblock %}
+{% block page_icon %}🧾{% endblock %}
+{% block page_title %}{% if object %}Modifier{% else %}Ajouter{% endif %} un personnel navigant{% endblock %}
+{% block page_subtitle %}Complétez les informations administratives et rattachez la compagnie aérienne.{% endblock %}
+
+{% block content %}
+    <section class="card">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-grid">
+                {% for field in form %}
+                    <div class="form-field{% if field.errors %} form-field--error{% endif %}">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="form-field__help">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="form-field__errors">{{ field.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="actions">
+                <button type="submit">Enregistrer</button>
+                <a class="btn btn-secondary" href="{% url 'personnel_list' %}">Annuler</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

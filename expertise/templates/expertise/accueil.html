@@ -1,274 +1,154 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Accueil - CEPN</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        --background: linear-gradient(135deg, #0d47a1, #42a5f5);
-        --card-bg: rgba(255, 255, 255, 0.92);
-        --text-primary: #1c2a39;
-        --text-secondary: #4f5b62;
-        --accent: #0d47a1;
-        --accent-light: #42a5f5;
-        --border-radius: 16px;
-        --shadow: 0 12px 35px rgba(13, 71, 161, 0.18);
-      }
+{% extends 'expertise/layout.html' %}
+{% block title %}Accueil CEPN{% endblock %}
+{% block page_icon %}{% endblock %}
+{% block page_title %}Centre d'expertises médicales{% endblock %}
+{% block page_subtitle %}
+    <div class="home-subheader">
+        <p class="home-subheader__lead">Suivi quotidien des personnels navigants de Polynésie française. Retrouvez en un clin d'œil vos dossiers, bordereaux et factures.</p>
+        <section class="card user-card home-subheader__card">
+            <div class="user-card__header">
+                <span class="user-card__emoji">👋</span>
+                <div>
+                    <h2>Bonjour {{ user.username }}</h2>
+                    <p>Bienvenue sur l'espace d'administration du CEPN.</p>
+                </div>
+            </div>
+            <div class="user-card__actions">
+                <a class="btn" href="{% url 'logout' %}">Se déconnecter</a>
+            </div>
+        </section>
+    </div>
+{% endblock %}
 
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: 'Roboto', Arial, sans-serif;
-        background: var(--background);
-        color: var(--text-primary);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding: 40px 20px;
-      }
-
-      .dashboard {
-        width: 100%;
-        max-width: 1100px;
-        background: var(--card-bg);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-      }
-
-      .dashboard__header {
-        padding: 36px 40px 28px;
-        background: linear-gradient(145deg, rgba(13, 71, 161, 0.92), rgba(66, 165, 245, 0.85));
-        color: #fff;
+{% block extra_head %}
+<style>
+    .user-card__actions {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-end;
-        gap: 20px;
-      }
+        gap: 12px;
+    }
 
-      .brand {
-        display: flex;
-        flex-direction: column;
-      }
+    .shortcuts {
+        margin-top: 10px;
+    }
 
-      .brand h1 {
-        font-size: 2.2rem;
-        margin: 0;
-        letter-spacing: 0.02em;
-      }
-
-      .brand p {
-        margin: 8px 0 0;
-        font-size: 0.95rem;
-        opacity: 0.9;
-      }
-
-      .user-panel {
-        background: rgba(255, 255, 255, 0.12);
-        padding: 14px 22px;
-        border-radius: 12px;
-        font-size: 0.95rem;
-      }
-
-      .user-panel strong {
-        display: block;
-        font-size: 1.05rem;
-        margin-bottom: 6px;
-      }
-
-      .logout-link {
-        display: inline-block;
-        margin-top: 8px;
-        padding: 8px 16px;
-        background: #fff;
-        color: var(--accent);
-        border-radius: 999px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .logout-link:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(255, 255, 255, 0.25);
-      }
-
-      .dashboard__content {
-        padding: 32px 40px 44px;
-      }
-
-      .sections {
+    .home-subheader {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 22px;
-      }
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: start;
+    }
 
-      .card {
-        background: #fff;
-        border-radius: 14px;
-        padding: 24px;
-        box-shadow: 0 8px 20px rgba(13, 71, 161, 0.08);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(66, 165, 245, 0.08), rgba(13, 71, 161, 0.08));
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 16px 30px rgba(13, 71, 161, 0.18);
-      }
-
-      .card:hover::after {
-        opacity: 1;
-      }
-
-      .card a {
-        text-decoration: none;
-        color: inherit;
-        position: relative;
-        z-index: 1;
-        display: block;
-      }
-
-      .card__icon {
-        font-size: 2rem;
-        margin-bottom: 16px;
-      }
-
-      .card__title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-
-      .card__subtitle {
-        font-size: 0.92rem;
+    .home-subheader__lead {
+        margin: 0;
         color: var(--text-secondary);
-        line-height: 1.4;
-      }
+    }
 
-      .info-banner {
-        margin-top: 36px;
+    .home-subheader__card {
+        width: 320px;
+        background: linear-gradient(135deg, rgba(66, 165, 245, 0.85), rgba(13, 71, 161, 0.75));
+        color: #fff;
+    }
+
+    .page__icon {
+        display: none;
+    }
+
+    .page__header {
+        background: linear-gradient(135deg, #0a1e3f, #123f74);
+        padding: 26px 28px;
+        border-radius: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+        color: #fff;
+        margin-bottom: 18px;
+    }
+
+    .page__header h1,
+    .page__header p {
+        color: #fff;
+    }
+
+    .home-subheader__card .btn {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+    }
+
+    .home-subheader__card .btn:hover {
+        background: rgba(255, 255, 255, 0.28);
+        box-shadow: none;
+    }
+
+    .info-banner {
+        margin-top: 12px;
         background: rgba(13, 71, 161, 0.08);
-        border-left: 4px solid var(--accent);
-        border-radius: 10px;
+        border-left: 4px solid rgba(13, 71, 161, 0.4);
+        border-radius: 12px;
         padding: 18px 22px;
-        font-size: 0.95rem;
         color: var(--text-secondary);
-      }
+        font-size: 0.95rem;
+    }
 
-      @media (max-width: 720px) {
-        body {
-          padding: 20px 16px;
+    @media (max-width: 760px) {
+        .home-subheader {
+            grid-template-columns: 1fr;
         }
 
-        .dashboard__header {
-          padding: 28px 24px 22px;
+        .home-subheader__card {
+            width: 100%;
         }
+    }
+</style>
+{% endblock %}
 
-        .dashboard__content {
-          padding: 28px 24px 36px;
-        }
-      }
-    </style>
-</head>
-<body>
-    <div class="dashboard">
-      <header class="dashboard__header">
-        <div class="brand">
-          <h1>Centre d'Expertises Médicales</h1>
-          <p>Gestion des dossiers CEPN Polynésie française</p>
-        </div>
-        <div class="user-panel">
-          <strong>Bonjour {{ user.username }} 👋</strong>
-          <span>Besoin d'une pause ?</span>
-          <br>
-          <a class="logout-link" href="{% url 'logout' %}">Se déconnecter</a>
-        </div>
-      </header>
+{% block back_link %}{% endblock %}
 
-      <main class="dashboard__content">
-        <div class="sections">
-          <article class="card">
-            <a href="{% url 'personnel_list' %}">
-              <div class="card__icon">👤</div>
-              <div class="card__title">Personnel Navigant</div>
-              <div class="card__subtitle">Consulter, ajouter et suivre les dossiers des navigants.</div>
-            </a>
-          </article>
+{% block content %}
+    <section class="card-grid shortcuts">
+        <a class="card card--link" href="{% url 'personnel_list' %}">
+            <span class="card__icon">👤</span>
+            <h3 class="card__title">Personnel navigant</h3>
+            <p class="card__subtitle">Consulter, créer et suivre les dossiers des navigants.</p>
+        </a>
+        <a class="card card--link" href="{% url 'facture_search' %}">
+            <span class="card__icon">🔍</span>
+            <h3 class="card__title">Recherche facture</h3>
+            <p class="card__subtitle">Retrouver une facture à partir d'un numéro ou d'un patient.</p>
+        </a>
+        <a class="card card--link" href="{% url 'facture_par_compagnie' %}">
+            <span class="card__icon">✈️</span>
+            <h3 class="card__title">Factures par compagnie</h3>
+            <p class="card__subtitle">Visualiser les totaux par transporteur et le détail associé.</p>
+        </a>
+        <a class="card card--link" href="{% url 'bordereau_par_compagnie' %}">
+            <span class="card__icon">🧾</span>
+            <h3 class="card__title">Bordereaux</h3>
+            <p class="card__subtitle">Consulter les montants, générer les virements et vérifier les factures.</p>
+        </a>
+        <a class="card card--link" href="{% url 'intervenants_list' %}">
+            <span class="card__icon">👨‍⚕️</span>
+            <h3 class="card__title">Intervenants médicaux</h3>
+            <p class="card__subtitle">Suivre les médecins, leur activité et leurs honoraires.</p>
+        </a>
+        <a class="card card--link" href="{% url 'relance_factures' %}">
+            <span class="card__icon">📬</span>
+            <h3 class="card__title">Relances</h3>
+            <p class="card__subtitle">Identifier les factures à relancer (plus de 6 mois).</p>
+        </a>
+        <a class="card card--link" href="{% url 'export_evenements_excel' %}">
+            <span class="card__icon">📊</span>
+            <h3 class="card__title">Export Excel</h3>
+            <p class="card__subtitle">Exporter les événements pour les partager ou les archiver.</p>
+        </a>
+        <a class="card card--link" href="{% url 'admin:index' %}">
+            <span class="card__icon">⚙️</span>
+            <h3 class="card__title">Administration</h3>
+            <p class="card__subtitle">Accéder au back-office Django pour des actions avancées.</p>
+        </a>
+    </section>
 
-          <article class="card">
-            <a href="{% url 'facture_search' %}">
-              <div class="card__icon">🔍</div>
-              <div class="card__title">Recherche facture</div>
-              <div class="card__subtitle">Retrouver rapidement une facture par numéro ou patient.</div>
-            </a>
-          </article>
+    <section class="info-banner">
+        🔔 Astuce : pensez à générer régulièrement les bordereaux et factures médecins pour garder votre comptabilité à jour. Chaque action est historisée automatiquement.
+    </section>
+{% endblock %}
 
-          <article class="card">
-            <a href="{% url 'facture_par_compagnie' %}">
-              <div class="card__icon">✈️</div>
-              <div class="card__title">Factures par compagnie</div>
-              <div class="card__subtitle">Vision consolidée et totaux par transporteur.</div>
-            </a>
-          </article>
-
-          <article class="card">
-            <a href="{% url 'bordereau_par_compagnie' %}">
-              <div class="card__icon">🧾</div>
-              <div class="card__title">Bordereaux</div>
-              <div class="card__subtitle">Consulter les bordereaux, montants et téléchargements.</div>
-            </a>
-          </article>
-
-          <article class="card">
-            <a href="{% url 'intervenants_list' %}">
-              <div class="card__icon">👨‍⚕️</div>
-              <div class="card__title">Intervenants médicaux</div>
-              <div class="card__subtitle">Suivi des médecins, historiques et factures honoraires.</div>
-            </a>
-          </article>
-
-          <article class="card">
-            <a href="{% url 'relance_factures' %}">
-              <div class="card__icon">📬</div>
-              <div class="card__title">Relances</div>
-              <div class="card__subtitle">Identifier les factures en attente (plus de 6 mois).</div>
-            </a>
-          </article>
-
-          <article class="card">
-            <a href="{% url 'export_evenements_excel' %}">
-              <div class="card__icon">📄</div>
-              <div class="card__title">Export Excel</div>
-              <div class="card__subtitle">Exporter l'activité globale pour analyses et archives.</div>
-            </a>
-          </article>
-
-          <article class="card">
-            <a href="{% url 'admin:index' %}">
-              <div class="card__icon">⚙️</div>
-              <div class="card__title">Administration</div>
-              <div class="card__subtitle">Accès complet au back-office Django.</div>
-            </a>
-          </article>
-        </div>
-
-        <section class="info-banner">
-          🔔 Astuce : pensez à générer régulièrement les bordereaux et factures médecins pour garder vos comptes à jour. Toute action est directement historisée dans le système.
-        </section>
-      </main>
-    </div>
-</body>
-</html>
+{% block page_footer %}{% endblock %}

@@ -1,129 +1,80 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Historique - {{ medecin.nom }} {{ medecin.prenom }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f8f8f8;
-            color: #333;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-            margin-bottom: 10px;
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-top: 0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: #fff;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 0.8rem;
-        }
-        .badge-green {
-            background-color: #28a745;
-        }
-        .badge-red {
-            background-color: #dc3545;
-        }
-        .actions {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .inline-form {
-            display: inline;
-        }
-        .danger-button {
-            background: none;
-            border: none;
-            color: #dc3545;
-            cursor: pointer;
-            font-size: 0.9rem;
-            text-decoration: underline;
-            padding: 0;
-        }
-        .danger-button:hover {
-            color: #a71d2a;
-        }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <div class="container">
-        <a href="{% url 'intervenants_list' %}">← Retour à la liste des intervenants</a>
-        <h1>Historique d'activité</h1>
-        <h2>{{ medecin.prenom }} {{ medecin.nom }} — {{ medecin.specialite }}</h2>
+{% extends 'expertise/layout.html' %}
+{% block title %}Historique intervenant{% endblock %}
+{% block page_icon %}📋{% endblock %}
+{% block page_title %}Historique d'activité{% endblock %}
+{% block page_subtitle %}{{ medecin.prenom }} {{ medecin.nom }} — {{ medecin.specialite|default:'Spécialité non renseignée' }}{% endblock %}
 
-        {% if history %}
-            <p><strong>Total brut (actes payés) :</strong> {{ total_brut|floatformat:0 }} XPF</p>
-            <p><strong>Total redevance :</strong> {{ total_redevance|floatformat:0 }} XPF</p>
-            <p><strong>Total net à payer :</strong> {{ total_net|floatformat:0 }} XPF</p>
+{% block content %}
+    <section class="card">
+        <div class="actions actions--spread">
+            <div class="tags">
+                <span class="tag">Total actes : {{ history|length }}</span>
+                {% if pending_entries %}
+                    <span class="tag tag--danger">{{ pending_entries|length }} acte(s) sans facture</span>
+                {% endif %}
+            </div>
+            <div class="actions">
+                <a class="btn btn-secondary btn--small" href="{% url 'intervenants_list' %}">Retour aux intervenants</a>
+            </div>
+        </div>
+        {% if pending_entries %}
+            <div class="actions actions--top">
+                <a class="btn" href="{% url 'intervenant_history' medecin.id %}?autogen=1">Générer une facture pour les actes à facturer</a>
+            </div>
+        {% endif %}
+    </section>
 
-            {% if pending_entries %}
-                <p>
-                    <strong>{{ pending_entries|length }} acte(s) payé(s) sans facture.</strong>
-                    <a href="{% url 'intervenant_history' medecin.id %}?autogen=1">Générer une nouvelle facture</a>
-                </p>
-            {% endif %}
-
+    {% if history %}
+        <section class="card">
+            <h2>Récapitulatif financier</h2>
+            <ul class="data-list data-list--spaced">
+                <li class="data-list__item">
+                    <span class="data-list__label">Montant brut (payé)</span>
+                    <span class="data-list__value">{{ total_brut|floatformat:0 }} XPF</span>
+                </li>
+                <li class="data-list__item">
+                    <span class="data-list__label">Redevances</span>
+                    <span class="data-list__value">{{ total_redevance|floatformat:0 }} XPF</span>
+                </li>
+                <li class="data-list__item">
+                    <span class="data-list__label">Montant net à payer</span>
+                    <span class="data-list__value">{{ total_net|floatformat:0 }} XPF</span>
+                </li>
+            </ul>
             {% if latest_invoice %}
-                <p><strong>Dernière facture médecin :</strong> {{ latest_invoice.number }} ({{ latest_invoice.emission_date|date:"d/m/Y" }})</p>
+                <p class="card__subtitle">Dernière facture médecin n° {{ latest_invoice.number }} émise le {{ latest_invoice.emission_date|date:"d/m/Y" }}.</p>
             {% else %}
-                <p>Aucune facture médecin n'a encore été générée pour cet intervenant.</p>
+                <p class="card__subtitle">Aucune facture médecin n'a encore été générée pour cet intervenant.</p>
             {% endif %}
+        </section>
 
-            {% if invoices %}
-                <h3>Factures générées</h3>
-                <ul>
+        {% if invoices %}
+            <section class="card">
+                <header class="actions actions--spread">
+                    <h2>Factures générées</h2>
+                    <a class="btn btn-secondary btn--small" href="{% url 'intervenant_invoice_all' medecin.id %}">Télécharger toutes (ZIP)</a>
+                </header>
+                <ul class="data-list data-list--spaced">
                     {% for invoice in invoices %}
-                        <li>
-                            {{ invoice.number }} — émise le {{ invoice.emission_date|date:"d/m/Y" }} — net {{ invoice.total_net|floatformat:0 }} XPF
-                            (<a href="{% url 'intervenant_invoice' medecin.id invoice.id %}">Télécharger</a>
-                            | <form class="inline-form" method="post" action="{% url 'intervenant_invoice_delete' medecin.id invoice.id %}" onsubmit="return confirm('Supprimer cette facture médecin ?');">
-                                {% csrf_token %}
-                                <button type="submit" class="danger-button">Supprimer (Christian, que si c'est vraiment necessaire !!!!)</button>
-                            </form>)
+                        <li class="data-list__item">
+                            <div>
+                                <strong>{{ invoice.number }}</strong> — {{ invoice.emission_date|date:"d/m/Y" }}
+                                <span class="card__subtitle">Net {{ invoice.total_net|floatformat:0 }} XPF</span>
+                            </div>
+                            <div class="actions">
+                                <a class="btn btn-secondary btn--small" href="{% url 'intervenant_invoice' medecin.id invoice.id %}">Télécharger</a>
+                                <form class="inline-form" method="post" action="{% url 'intervenant_invoice_delete' medecin.id invoice.id %}" onsubmit="return confirm('Supprimer cette facture médecin ?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn--small">Supprimer</button>
+                                </form>
+                            </div>
                         </li>
                     {% endfor %}
                 </ul>
-                <p><a href="{% url 'intervenant_invoice_all' medecin.id %}">Télécharger toutes les factures (ZIP)</a></p>
-            {% endif %}
+            </section>
+        {% endif %}
+
+        <section class="card">
             <table>
                 <thead>
                     <tr>
@@ -131,9 +82,9 @@
                         <th>Acte</th>
                         <th>Patient</th>
                         <th>Facture</th>
-                        <th>Montant brut (XPF)</th>
+                        <th>Brut (XPF)</th>
                         <th>Redevance (XPF)</th>
-                        <th>Montant net (XPF)</th>
+                        <th>Net (XPF)</th>
                         <th>Statut</th>
                         <th>Facture médecin</th>
                     </tr>
@@ -148,14 +99,14 @@
                                 {% if entry.facture_no %}
                                     <a href="{% url 'facture' entry.facture_id %}">{{ entry.facture_no }}</a>
                                 {% else %}
-                                    N/A
+                                    <span class="tag">N/A</span>
                                 {% endif %}
                             </td>
                             <td>{{ entry.montant_brut|floatformat:0 }}</td>
                             <td>{{ entry.redevance|floatformat:0 }}</td>
                             <td>{{ entry.montant_net|floatformat:0 }}</td>
                             <td>
-                                <span class="badge {% if entry.paiement %}badge-green{% else %}badge-red{% endif %}">
+                                <span class="tag {% if entry.paiement %}tag--success{% else %}tag--danger{% endif %}">
                                     {% if entry.paiement %}Payée{% else %}Non payée{% endif %}
                                 </span>
                             </td>
@@ -165,20 +116,25 @@
                                 {% elif entry.invoice_number %}
                                     {{ entry.invoice_number }}
                                 {% else %}
-                                    -
+                                    —
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
-            <p>Aucun acte enregistré pour ce médecin.</p>
-        {% endif %}
+        </section>
+    {% else %}
+        <section class="card">
+            <p class="empty-state">Aucun acte enregistré pour ce médecin pour le moment.</p>
+        </section>
+    {% endif %}
 
-        <div class="actions">
-            <a href="{% url 'accueil' %}">🏠 Retour à l'accueil</a>
-        </div>
-    </div>
-</body>
-</html>
+{% endblock %}
+
+{% block page_footer %}
+    <section class="card page__footer-nav">
+        <a class="btn btn-secondary btn--small" href="{% url 'intervenants_list' %}">Retour aux intervenants</a>
+        <a class="btn btn-secondary btn--small" href="{% url 'accueil' %}">Retour à l'accueil</a>
+    </section>
+{% endblock %}

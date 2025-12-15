@@ -1,25 +1,40 @@
-{% include 'expertise/_back_home.html' %}
-<h2>Factures du Bordereau {{ no_bordereau }}</h2>
+{% extends 'expertise/layout.html' %}
+{% block title %}Factures du bordereau{% endblock %}
+{% block page_icon %}🧾{% endblock %}
+{% block page_title %}Factures du bordereau {{ no_bordereau }}{% endblock %}
+{% block page_subtitle %}Suivi détaillé des factures rattachées au dépôt.{% endblock %}
 
-<table>
-    <thead>
-        <tr>
-            <th>Numéro de facture</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Total</th>
-            <th>Paiement</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in evenements %}
-        <tr>
-            <td>{{ e.no_facture }}</td>
-            <td>{{ e.personnel.nom }}</td>
-            <td>{{ e.personnel.prenom }}</td>
-            <td>{{ e.total }} XPF</td>
-            <td>{{ e.paiement|yesno:"Payé,Non payé" }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block content %}
+    <section class="card">
+        {% if evenements %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Numéro</th>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Total (XPF)</th>
+                        <th>Paiement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in evenements %}
+                        <tr>
+                            <td>{{ e.no_facture }}</td>
+                            <td>{{ e.personnel.nom }}</td>
+                            <td>{{ e.personnel.prenom }}</td>
+                            <td>{{ e.total }} XPF</td>
+                            <td>
+                                <span class="tag {% if e.paiement %}tag--success{% else %}tag--danger{% endif %}">
+                                    {{ e.paiement|yesno:"Payé,Non payé" }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-state">Aucune facture enregistrée pour ce bordereau.</p>
+        {% endif %}
+    </section>
+{% endblock %}

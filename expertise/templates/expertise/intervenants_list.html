@@ -1,86 +1,21 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Intervenants médicaux</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f8f8f8;
-            color: #333;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            vertical-align: top;
-        }
-        th {
-            background-color: #007bff;
-            color: #fff;
-            text-align: center;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .history-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .history-item {
-            padding: 6px 0;
-            border-bottom: 1px solid #ececec;
-        }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 0.8rem;
-        }
-        .badge-green {
-            background-color: #28a745;
-        }
-        .badge-red {
-            background-color: #dc3545;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <div class="container">
-        <a class="back-link" href="{% url 'accueil' %}">← Retour à l'accueil</a>
-        <h1>Intervenants médicaux</h1>
-        {% if medecin_rows %}
+{% extends 'expertise/layout.html' %}
+{% block title %}Intervenants médicaux{% endblock %}
+{% block page_icon %}👩‍⚕️{% endblock %}
+{% block page_title %}Intervenants médicaux{% endblock %}
+{% block page_subtitle %}Suivez l'activité des médecins partenaires et générez leurs factures en quelques clics.{% endblock %}
+
+{% block content %}
+    <section class="card">
+        <div class="actions actions--spread">
+            <div>
+                <p class="card__subtitle">{{ medecin_rows|length }} intervenant{% if medecin_rows|length > 1 %}s{% endif %} enregistré{% if medecin_rows|length > 1 %}s{% endif %}.</p>
+            </div>
+            <a class="btn btn-secondary btn--small" href="{% url 'accueil' %}">Retour à l'accueil</a>
+        </div>
+    </section>
+
+    {% if medecin_rows %}
+        <section class="card">
             <table>
                 <thead>
                     <tr>
@@ -95,21 +30,23 @@
                         <tr>
                             <td>{{ row.medecin.nom }}</td>
                             <td>{{ row.medecin.prenom }}</td>
-                            <td>{{ row.medecin.specialite }}</td>
+                            <td>{{ row.medecin.specialite|default:'—' }}</td>
                             <td>
                                 {% if row.history %}
-                                    <a href="{% url 'intervenant_history' row.medecin.id %}">Historique complet</a>
+                                    <span class="tag tag--success">Actes enregistrés</span>
+                                    <a class="btn btn-secondary btn--small" href="{% url 'intervenant_history' row.medecin.id %}">Voir l'historique</a>
                                 {% else %}
-                                    Aucun acte enregistré.
+                                    <span class="tag tag--danger">Aucun acte</span>
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
-            <p>Aucun intervenant enregistré.</p>
-        {% endif %}
-    </div>
-</body>
-</html>
+        </section>
+    {% else %}
+        <section class="card">
+            <p class="empty-state">Aucun intervenant n'est enregistré pour le moment.</p>
+        </section>
+    {% endif %}
+{% endblock %}

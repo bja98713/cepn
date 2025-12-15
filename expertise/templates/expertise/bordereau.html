@@ -1,154 +1,65 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>{{ titre }}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f8f8f8;
-      color: #333;
-    }
-    /* Style pour l'en-tête principal */
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      color: #007bff;
-      font-size: 2em;
-      margin: 0;
-    }
-    .header h2 {
-      color: #007bff;
-      font-size: 1.2em;
-      margin: 5px 0 0 0;
-      font-weight: normal;
-    }
-    /* Sous-titre pour la liste */
-    h3 {
-      color: #333;
-      text-align: center;
-      margin-top: 20px;
-    }
-    /* Styles pour le formulaire de recherche */
-    .search-form {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .search-form input[type="text"] {
-      padding: 8px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .search-form button {
-      padding: 8px 12px;
-      border: none;
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .search-form button:hover {
-      background-color: #0056b3;
-    }
-    /* Styles pour le tableau */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: #fff;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .action-links a {
-      margin: 0 5px;
-      color: #007bff;
-      text-decoration: none;
-    }
-    .action-links a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
+{% extends 'expertise/layout.html' %}
+{% block title %}Bordereau {{ no_bordereau }}{% endblock %}
+{% block page_icon %}🧾{% endblock %}
+{% block page_title %}Bordereau {{ no_bordereau }}{% endblock %}
+{% block page_subtitle %}
+    Compagnie {{ compagnie.nom }}{% if compagnie.iata %} ({{ compagnie.iata }}){% endif %} — {{ mois }}/{{ annee }}
+{% endblock %}
 
-  <div style="text-align: center;">
-    <h2>Centre Médical du Personnel Navigant de Polynésie française</h2>
-    <h2>Dr. Christian Hellec</h2>
-    <h3>BP 1946 - 98713 Papeete</h3>
-    <h3>Tel : 87.71.50.90 | Mel : cmpnpf@gmail.com</h3>
-    <p>---------------------</p>
-    <h2>Bordereau de dépôts de factures</h2>
-    <p><strong>Date du bordereau :</strong> {{ date_bordereau }}</p>
-    <p><strong>Numéro de bordereau :</strong> {{ no_bordereau }}</p>
-</div>
-  <h2>Compagnie : {{ compagnie.nom }}
-    {% if compagnie.iata %} ({{ compagnie.iata }}){% endif %}
-  </h2>
-  <p>Bordereau pour le mois {{ mois }} / {{ annee }} </p>
+{% block content %}
+    <section class="stat-board">
+        <div class="stat">
+            <span>Date du bordereau</span>
+            <strong>{{ date_bordereau }}</strong>
+        </div>
+        <div class="stat">
+            <span>Nombre de factures</span>
+            <strong>{{ nombre_factures }}</strong>
+        </div>
+        <div class="stat">
+            <span>Total général</span>
+            <strong>{{ total_global }} XPF</strong>
+        </div>
+    </section>
 
-  <table class="table">
-    <thead>
-        <tr>
-            <th>Numéro de facture</th>
-            <th>DN</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Total (XPF)</th>
-            <th>Paiement</th>
-            <th>Numéro de Bordereau</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% if evenements %}
-            {% for evenement in evenements %}
+    <p><em>{{ total_global_lettres }} francs</em></p>
+
+    <table>
+        <thead>
             <tr>
-                <td>{{ evenement.no_facture }}</td>
-                <td>{{ evenement.personnel.dn }}</td>
-                <td>{{ evenement.personnel.nom }}</td>
-                <td>{{ evenement.personnel.prenom }}</td>
-                <td>{{ evenement.total }} XPF</td>
-                <td>{% if evenement.paiement %}Payé{% else %}Non payé{% endif %}</td>
-                <td>{{ evenement.bordereau.no_bordereau }}</td>
+                <th>Facture</th>
+                <th>DN</th>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Total (XPF)</th>
+                <th>Paiement</th>
+                <th>Bordereau</th>
             </tr>
-            {% endfor %}
-        {% else %}
-            <tr><td colspan="6">Aucune facture pour cette période.</td></tr>
-        {% endif %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            {% if evenements %}
+                {% for evenement in evenements %}
+                    <tr>
+                        <td>{{ evenement.no_facture }}</td>
+                        <td>{{ evenement.personnel.dn }}</td>
+                        <td>{{ evenement.personnel.nom }}</td>
+                        <td>{{ evenement.personnel.prenom }}</td>
+                        <td>{{ evenement.total }}</td>
+                        <td>{% if evenement.paiement %}Payé{% else %}Non payé{% endif %}</td>
+                        <td>{{ evenement.bordereau.no_bordereau }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="empty-state">Aucune facture pour cette période.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
 
-  <div class="footer">
-    <p><strong>Nombre de factures :</strong> {{ nombre_factures }} | <strong>Total général :</strong> {{ total_global }} XPF, soit ({{ total_global_lettres }} francs) </p>
-</p>
-
-    <p>RIB BDT : 12239.00001.62288701000.14</p>
-    <p>Date Limite de Paiement : </p>
-  </div>
-  <p style="text-align: center;">
-    <a href="{% url 'download_bordereau' mois=mois annee=annee iata=iata %}" class="btn btn-primary">
-        📄 Télécharger le bordereau et ses factures
-    </a>
-    </p>
-  <p style="text-align: center;">
-    <a href="{% url 'selectionner_bordereau' %}">Créer un nouveau bordereau</a>
-  </p>
-  <p style="text-align: center;">
-    <a href="{% url 'personnel_list' %}">Retour à la liste des personnels</a>
-  </p>
-</body>
-</html>
+    <div class="actions">
+        <a class="btn" href="{% url 'download_bordereau' mois=mois annee=annee iata=iata %}">📄 Télécharger le bordereau et ses factures</a>
+        <a class="btn btn-secondary" href="{% url 'selectionner_bordereau' %}">Créer un nouveau bordereau</a>
+        <a class="btn btn-secondary" href="{% url 'personnel_list' %}">Retour à la liste du personnel</a>
+    </div>
+{% endblock %}

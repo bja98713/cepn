@@ -1,17 +1,18 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Supprimer l'événement</title>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>Supprimer l'événement</h1>
-    <p>Êtes-vous sûr de vouloir supprimer l'événement du {{ object.date_evenement|date:"d/m/Y" }} pour {{ object.personnel.prenom }} {{ object.personnel.nom }} ?</p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Confirmer la suppression</button>
-    </form>
-    <a href="{% url 'personnel_detail' object.personnel.dn %}">Annuler</a>
-</body>
-</html>
+{% extends 'expertise/layout.html' %}
+{% block title %}Supprimer l'événement{% endblock %}
+{% block page_icon %}⚠️{% endblock %}
+{% block page_title %}Confirmation de suppression{% endblock %}
+{% block page_subtitle %}Événement du {{ object.date_evenement|date:"d/m/Y" }} pour {{ object.personnel.prenom }} {{ object.personnel.nom }}.{% endblock %}
+
+{% block content %}
+    <section class="card">
+        <p>Cette action retirera définitivement l'événement de la fiche du personnel navigant. Confirmez-vous la suppression ?</p>
+        <div class="actions">
+            <form method="post" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger">Supprimer</button>
+            </form>
+            <a class="btn btn-secondary" href="{% url 'personnel_detail' object.personnel.dn %}">Annuler</a>
+        </div>
+    </section>
+{% endblock %}

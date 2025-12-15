@@ -1,17 +1,18 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Supprimer Personnel</title>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>Supprimer Personnel</h1>
-    <p>Êtes-vous sûr de vouloir supprimer {{ object.prenom }} {{ object.nom }} ?</p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Confirmer</button>
-    </form>
-    <a href="{% url 'personnel_detail' object.dn %}">Annuler</a>
-</body>
-</html>
+{% extends 'expertise/layout.html' %}
+{% block title %}Supprimer un personnel{% endblock %}
+{% block page_icon %}⚠️{% endblock %}
+{% block page_title %}Confirmation de suppression{% endblock %}
+{% block page_subtitle %}DN : {{ object.dn }} — {{ object.prenom }} {{ object.nom }}{% endblock %}
+
+{% block content %}
+    <section class="card">
+        <p>Cette action supprimera définitivement ce dossier navigant ainsi que les liens associés. Souhaitez-vous continuer ?</p>
+        <div class="actions">
+            <form method="post" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger">Supprimer</button>
+            </form>
+            <a class="btn btn-secondary" href="{% url 'personnel_detail' object.dn %}">Annuler</a>
+        </div>
+    </section>
+{% endblock %}

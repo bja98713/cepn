@@ -1,236 +1,114 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Fiche Événement</title>
-    <style>
-      table {
-         width: 100%;
-         border-collapse: collapse;
-         margin-bottom: 20px;
-      }
-      table, th, td {
-         border: 1px solid #ccc;
-      }
-      th, td {
-         padding: 8px;
-         text-align: left;
-      }
-      th {
-         background-color: #f2f2f2;
-      }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <h1>Détail de l'Événement</h1>
+{% extends 'expertise/layout.html' %}
+{% block title %}Fiche événement{% endblock %}
+{% block page_icon %}🗂️{% endblock %}
+{% block page_title %}Événement du {{ evenement.date_evenement|date:"d/m/Y" }}{% endblock %}
+{% block page_subtitle %}DN {{ evenement.personnel.dn }} — {{ evenement.personnel.nom }} {{ evenement.personnel.prenom }}{% endblock %}
 
-    <!-- Tableau pour les informations générales de l'événement -->
-    <table>
-        <tr>
-            <th>Champ</th>
-            <th>Valeur</th>
-        </tr>
-        <tr>
-            <td>Date de l'événement</td>
-            <td>{{ evenement.date_evenement|date:"d/m/Y" }}</td>
-        </tr>
-    </table>
+{% block content %}
+    <section class="card">
+        <div class="stat-board">
+            <div class="stat">
+                <span>Total facture</span>
+                <strong>{{ evenement.total }} XPF</strong>
+            </div>
+            <div class="stat">
+                <span>Frais de dossier</span>
+                <strong>{{ evenement.frais_dossier }} XPF</strong>
+            </div>
+            <div class="stat">
+                <span>Payé par patient</span>
+                <strong>{{ evenement.paye_par_patient }} XPF</strong>
+            </div>
+            <div class="stat">
+                <span>Quote-part</span>
+                <strong>{{ evenement.quote_part_patient|yesno:"Oui,Non" }}</strong>
+            </div>
+        </div>
+        <div class="tags" style="margin-top: 18px;">
+            <span class="tag {% if evenement.paiement %}tag--success{% else %}tag--danger{% endif %}">
+                Paiement {% if evenement.paiement %}effectué{% else %}en attente{% endif %}
+            </span>
+            {% if evenement.no_facture %}
+                <span class="tag">Facture n° {{ evenement.no_facture }}</span>
+            {% endif %}
+        </div>
+        <div class="actions actions--top">
+            <a class="btn" href="{% url 'evenement_edit' evenement.pk %}">Modifier l'événement</a>
+            <a class="btn btn-secondary" href="{% url 'personnel_detail' evenement.personnel.dn %}">Retour au dossier personnel</a>
+        </div>
+    </section>
 
-    <!-- Tableau pour les informations du patient -->
-    <h2>Informations du Patient</h2>
-    <table>
-        <tr>
-            <th>Champ</th>
-            <th>Valeur</th>
-        </tr>
-        <tr>
-            <td>DN</td>
-            <td>{{ evenement.personnel.dn }}</td>
-        </tr>
-        <tr>
-            <td>Nom</td>
-            <td>{{ evenement.personnel.nom }}</td>
-        </tr>
-        <tr>
-            <td>Prénom</td>
-            <td>{{ evenement.personnel.prenom }}</td>
-        </tr>
-        <tr>
-            <td>Sexe</td>
-            <td>{{ evenement.personnel.get_sexe_display }}</td>
-        </tr>
-    </table>
+    <section class="card-grid">
+        <article class="card">
+            <h2>Informations patient</h2>
+            <ul class="data-list">
+                <li class="data-list__item"><span class="data-list__label">DN</span><span class="data-list__value">{{ evenement.personnel.dn }}</span></li>
+                <li class="data-list__item"><span class="data-list__label">Nom</span><span class="data-list__value">{{ evenement.personnel.nom }}</span></li>
+                <li class="data-list__item"><span class="data-list__label">Prénom</span><span class="data-list__value">{{ evenement.personnel.prenom }}</span></li>
+                <li class="data-list__item"><span class="data-list__label">Sexe</span><span class="data-list__value">{{ evenement.personnel.get_sexe_display }}</span></li>
+            </ul>
+        </article>
+        <article class="card">
+            <h2>Modalités de paiement</h2>
+            <ul class="data-list">
+                <li class="data-list__item"><span class="data-list__label">Paiement</span><span class="data-list__value">{{ evenement.paiement|yesno:"Oui,Non" }}</span></li>
+                {% if evenement.paiement %}
+                    <li class="data-list__item"><span class="data-list__label">Date</span><span class="data-list__value">{{ evenement.date_paiement|date:"d/m/Y" }}</span></li>
+                    <li class="data-list__item"><span class="data-list__label">Modalité</span><span class="data-list__value">{{ evenement.get_modalite_paiement_display }}</span></li>
+                {% else %}
+                    <li class="data-list__item"><span class="data-list__label">Modalité</span><span class="data-list__value">—</span></li>
+                {% endif %}
+            </ul>
+        </article>
+    </section>
 
-    <!-- Tableau pour les détails des consultations et honoraires -->
-    <h2>Détails des Consultations et Honoraires</h2>
-    <table>
-        <tr>
-            <th>Type de consultation</th>
-            <th>Date</th>
-            <th>Honoraire</th>
-        </tr>
-        <tr>
-            <td>CS CEMPN</td>
-            <td>
-                {% if evenement.cs_cempn %}
-                    {{ evenement.date_cempn|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_cempn %}
-                    {{ evenement.honoraire_cempn }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CS OPH</td>
-            <td>
-                {% if evenement.cs_oph %}
-                    {{ evenement.date_cs_oph|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_oph %}
-                    {{ evenement.honoraire_cs_oph }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CS ORL</td>
-            <td>
-                {% if evenement.cs_orl %}
-                    {{ evenement.date_cs_orl|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_orl %}
-                    {{ evenement.honoraire_cs_orl }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CS LABO</td>
-            <td>
-                {% if evenement.cs_labo %}
-                    {{ evenement.date_cs_labo|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_labo %}
-                    {{ evenement.honoraire_cs_labo }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CS LBX</td>
-            <td>
-                {% if evenement.cs_lbx %}
-                    {{ evenement.date_cs_lbx|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_lbx %}
-                    {{ evenement.honoraire_cs_lbx }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>Recherche de toxique</td>
-            <td>
-                {% if evenement.cs_toxique %}
-                    {{ evenement.date_cs_toxique|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_toxique %}
-                    {{ evenement.honoraire_cs_toxique }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CS RADIO</td>
-            <td>
-                {% if evenement.cs_radio %}
-                    {{ evenement.date_cs_radio|date:"d/m/Y" }}
-                {% else %}
-                    Non
-                {% endif %}
-            </td>
-            <td>
-                {% if evenement.cs_radio %}
-                    {{ evenement.honoraire_cs_radio }} xpf
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-    </table>
-
-    <!-- Tableau pour les informations complémentaires -->
-    <h2>Informations Complémentaires</h2>
-    <table>
-        <tr>
-            <th>Champ</th>
-            <th>Valeur</th>
-        </tr>
-        <tr>
-            <td>Frais de dossier</td>
-            <td>{{ evenement.frais_dossier }} xpf</td>
-        </tr>
-        <tr>
-            <td>Total</td>
-            <td>{{ evenement.total }} xpf</td>
-        </tr>
-    </table>
-
-    <!-- Tableau pour les informations de paiement -->
-    <h2>Paiement</h2>
-    <table>
-        <tr>
-            <th>Champ</th>
-            <th>Valeur</th>
-        </tr>
-        <tr>
-            <td>Paiement effectué</td>
-            <td>{{ evenement.paiement|yesno:"Oui,Non" }}</td>
-        </tr>
-        {% if evenement.paiement %}
-        <tr>
-            <td>Date de paiement</td>
-            <td>{{ evenement.date_paiement|date:"d/m/Y" }}</td>
-        </tr>
-        <tr>
-            <td>Modalité de paiement</td>
-            <td>{{ evenement.get_modalite_paiement_display }}</td>
-        </tr>
-        {% endif %}
-    </table>
-
-    <p><a href="{% url 'fiche_personnel' evenement.personnel.dn %}">Retour à la fiche du PN</a></p>
-</body>
-</html>
+    <section class="card">
+        <h2>Consultations et actes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Acte</th>
+                    <th>Date</th>
+                    <th>Montant (XPF)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Consultation CEMPN</td>
+                    <td>{% if evenement.cs_cempn %}{{ evenement.date_cempn|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_cempn %}{{ evenement.honoraire_cempn }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Ophtalmologie</td>
+                    <td>{% if evenement.cs_oph %}{{ evenement.date_cs_oph|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_oph %}{{ evenement.honoraire_cs_oph }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>ORL</td>
+                    <td>{% if evenement.cs_orl %}{{ evenement.date_cs_orl|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_orl %}{{ evenement.honoraire_cs_orl }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Laboratoire (Biologie)</td>
+                    <td>{% if evenement.cs_labo %}{{ evenement.date_cs_labo|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_labo %}{{ evenement.honoraire_cs_labo }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Laboratoire (Labstix)</td>
+                    <td>{% if evenement.cs_lbx %}{{ evenement.date_cs_lbx|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_lbx %}{{ evenement.honoraire_cs_lbx }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Recherche toxique</td>
+                    <td>{% if evenement.cs_toxique %}{{ evenement.date_cs_toxique|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_toxique %}{{ evenement.honoraire_cs_toxique }} XPF{% else %}—{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Radiologie</td>
+                    <td>{% if evenement.cs_radio %}{{ evenement.date_cs_radio|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if evenement.cs_radio %}{{ evenement.honoraire_cs_radio }} XPF{% else %}—{% endif %}</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

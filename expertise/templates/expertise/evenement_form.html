@@ -1,124 +1,33 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Créer un événement</title>
-    <!-- Inclusion de la police Roboto -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f4f9;
-            font-family: 'Roboto', sans-serif;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #007BFF;
-            margin-bottom: 20px;
-        }
-        form {
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 12px 15px;
-            text-align: left;
-        }
-        table th {
-            background-color: #66B3FF; /* Bleu moins intense */
-            color: #fff;
-            font-weight: 700;
-        }
-        table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        table tr:hover {
-            background-color: #f1f1f1;
-        }
-        .error {
-            color: #D8000C;
-            font-size: 0.85em;
-            margin-top: 5px;
-        }
-        button {
-            background-color: #007BFF;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1em;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: block;
-            margin: 0 auto;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        a {
-            color: #007BFF;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .cancel-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-{% include 'expertise/_back_home.html' %}
-    <div class="container">
-        <h1>Créer un événement</h1>
+{% extends 'expertise/layout.html' %}
+{% block title %}{% if object %}Modifier{% else %}Créer{% endif %} un événement{% endblock %}
+{% block page_icon %}🗓️{% endblock %}
+{% block page_title %}{% if object %}Modifier{% else %}Nouvel{% endif %} événement médical{% endblock %}
+{% block page_subtitle %}DN concerné : {{ dn }}{% endblock %}
+
+{% block content %}
+    <section class="card">
         <form method="post">
             {% csrf_token %}
-            <table>
+            <div class="form-grid">
                 {% for field in form %}
-                <tr>
-                    <th>{{ field.label_tag }}</th>
-                    <td>
+                    <div class="form-field{% if field.errors %} form-field--error{% endif %}">
+                        {{ field.label_tag }}
                         {{ field }}
                         {% if field.help_text %}
-                            <br><small>{{ field.help_text }}</small>
+                            <span class="form-field__help">{{ field.help_text }}</span>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% for error in field.errors %}
-                            <div class="error">{{ error }}</div>
-                        {% endfor %}
-                    </td>
-                </tr>
+                        {% if field.errors %}
+                            <div class="form-field__errors">{{ field.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
                 {% endfor %}
-            </table>
-            <button type="submit">
-                {% if object %}
-                    Enregistrer les modifications
-                {% else %}
-                    Créer l'événement
-                {% endif %}
-            </button>
+            </div>
+            <div class="actions">
+                <button type="submit">
+                    {% if object %}Enregistrer les modifications{% else %}Créer l'événement{% endif %}
+                </button>
+                <a class="btn btn-secondary" href="{% url 'personnel_detail' dn %}">Annuler</a>
+            </div>
         </form>
-        <p class="cancel-link">
-            <a href="{% url 'personnel_detail' dn %}">Annuler</a>
-        </p>
-    </div>
-</body>
-</html>
+    </section>
+{% endblock %}
