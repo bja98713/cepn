@@ -116,7 +116,7 @@
                             (<a href="{% url 'intervenant_invoice' medecin.id invoice.id %}">Télécharger</a>
                             | <form class="inline-form" method="post" action="{% url 'intervenant_invoice_delete' medecin.id invoice.id %}" onsubmit="return confirm('Supprimer cette facture médecin ?');">
                                 {% csrf_token %}
-                                <button type="submit" class="danger-button">Supprimer</button>
+                                <button type="submit" class="danger-button">Supprimer (Christian, que si c'est vraiment necessaire !!!!)</button>
                             </form>)
                         </li>
                     {% endfor %}
