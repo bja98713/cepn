@@ -897,6 +897,23 @@ ACTE_CONFIGS = [
 ]
 
 
+def _get_redevance_rate(medecin):
+    if not medecin:
+        return Decimal('0.06')
+
+    nom = (medecin.nom or '').strip().upper()
+    if nom == 'HELLEC':
+        return Decimal('0.00')
+
+    specialite = (medecin.specialite or '').lower()
+    if 'radiolog' in specialite:
+        return Decimal('0.00')
+    if 'laboratoire' in specialite or 'labo' in specialite:
+        return Decimal('0.10')
+
+    return Decimal('0.06')
+
+
 def _generate_medecin_invoice_number(medecin, emission_date):
     initiale = (medecin.nom.strip()[0] if medecin.nom else medecin.prenom[:1]).upper()
     base = f"{emission_date.year}-{initiale}-{emission_date.strftime('%d%m%Y')}"
@@ -1014,10 +1031,8 @@ def _collect_medecin_histories(target_medecin=None):
                 invoice_id = ligne.invoice_id
                 invoice_date = ligne.invoice.emission_date
             else:
-                if medecin.nom and medecin.nom.strip().upper() == 'HELLEC':
-                    redevance = Decimal('0.00')
-                else:
-                    redevance = (montant_brut * Decimal('0.06')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                rate = _get_redevance_rate(medecin)
+                redevance = (montant_brut * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
                 montant_net = (montant_brut - redevance).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
                 invoice_number = ''
                 invoice_id = None
@@ -1311,16 +1326,18 @@ def telecharger_facture_medecin(request, bordereau_no, medecin_id):
         nom_patient = f"{e.personnel.prenom} {e.personnel.nom}"
 
         # Calculs
-        redevance = Decimal("0.00") if medecin.nom.upper() == "HELLEC" else montant * Decimal("0.06")
-        net = montant - redevance
+        montant_decimal = Decimal(montant)
+        rate = _get_redevance_rate(medecin)
+        redevance = (montant_decimal * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        net = (montant_decimal - redevance).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-        total += montant
+        total += montant_decimal
         total_redevance += redevance
 
         row = table.add_row().cells
         row[0].text = str(e.date_evenement)
         row[1].text = nom_patient
-        row[2].text = f"{montant:.0f} XPF"
+        row[2].text = f"{montant_decimal:.0f} XPF"
         row[3].text = f"{redevance:.0f} XPF"
         row[4].text = f"{net:.0f} XPF"
 
@@ -1371,18 +1388,20 @@ def telecharger_facture_medecin(request, bordereau_no, medecin_id):
         else:
             continue
 
-        redevance = Decimal("0.00") if medecin.nom.upper() == "HELLEC" else montant * Decimal("0.06")
-        net = montant - redevance
+        montant_decimal = Decimal(montant)
+        rate = _get_redevance_rate(medecin)
+        redevance = (montant_decimal * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        net = (montant_decimal - redevance).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
         evenements.append({
             "date": e.date_evenement.strftime('%d/%m/%Y'),
             "patient": f"{e.personnel.prenom} {e.personnel.nom}",
-            "montant": f"{montant:.0f}",
+            "montant": f"{montant_decimal:.0f}",
             "redevance": f"{redevance:.0f}",
             "net": f"{net:.0f}",
         })
 
-        total_brut += montant
+        total_brut += montant_decimal
         total_redevance += redevance
 
     total_net = total_brut - total_redevance
