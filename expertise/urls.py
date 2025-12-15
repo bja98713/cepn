@@ -34,6 +34,7 @@ urlpatterns = [
     path('intervenants/', views.intervenants_list, name='intervenants_list'),
     path('intervenants/<int:pk>/historique/', views.intervenant_history, name='intervenant_history'),
     path('intervenants/<int:pk>/facture/<int:invoice_id>/', views.intervenant_invoice, name='intervenant_invoice'),
+    path('intervenants/<int:pk>/facture/<int:invoice_id>/supprimer/', views.intervenant_invoice_delete, name='intervenant_invoice_delete'),
     path('intervenants/<int:pk>/factures/telecharger-tout/', views.intervenant_invoices_zip, name='intervenant_invoice_all'),
     path('personnels/', PersonnelListView.as_view(), name='personnel_list'),
     path('personnels/add/', PersonnelCreateView.as_view(), name='personnel_add'),

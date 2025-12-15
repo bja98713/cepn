@@ -1086,11 +1086,9 @@ def intervenant_history(request, pk):
     history.sort(key=lambda item: item['date'] or datetime.min, reverse=True)
 
     pending_entries = [entry for entry in history if entry.get('paiement') and not entry.get('invoice_number')]
-    if pending_entries:
+    if request.GET.get('autogen') == '1' and pending_entries:
         _create_medecin_invoice(medecin, pending_entries)
-        history_map = _collect_medecin_histories(target_medecin=medecin)
-        history = history_map.get(medecin.id, [])
-        history.sort(key=lambda item: item['date'] or datetime.min, reverse=True)
+        return redirect('intervenant_history', pk=medecin.pk)
 
     paid_entries = [entry for entry in history if entry.get('paiement')]
     total_brut = sum(entry.get('montant_brut', Decimal('0')) or Decimal('0') for entry in paid_entries)
@@ -1108,6 +1106,7 @@ def intervenant_history(request, pk):
         'total_net': total_net,
         'latest_invoice': latest_invoice,
         'invoices': invoices,
+        'pending_entries': pending_entries,
     })
 
 
@@ -1122,6 +1121,15 @@ def intervenant_invoice(request, pk, invoice_id):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+@require_POST
+@login_required(login_url='/login/')
+def intervenant_invoice_delete(request, pk, invoice_id):
+    medecin = get_object_or_404(Medecin, pk=pk)
+    invoice = get_object_or_404(MedecinInvoice, pk=invoice_id, medecin=medecin)
+    invoice.delete()
+    return redirect('intervenant_history', pk=medecin.pk)
 
 
 def _render_medecin_invoice_pdf(invoice):
