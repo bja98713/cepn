@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import datetime, timedelta
 from collections import defaultdict
+from decimal import Decimal, ROUND_HALF_UP
 from num2words import num2words
 from docx import Document
 from docx.shared import Pt
@@ -17,10 +18,20 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 import barcode
 import io
 import base64
+import zipfile
 import pandas as pd
 from barcode.writer import ImageWriter
 from django.views.decorators.http import require_POST
-from .models import FicheEvenement, PersonnelNavigant, CompagnieAerienne, Bordereau, FactureMedecin
+from .models import (
+    FicheEvenement,
+    PersonnelNavigant,
+    CompagnieAerienne,
+    Bordereau,
+    FactureMedecin,
+    Medecin,
+    MedecinInvoice,
+    MedecinInvoiceLine,
+)
 from .forms import BordereauSelectionForm
 from django.db import models
 from django.template.loader import render_to_string
@@ -670,7 +681,6 @@ def toggle_virement(request, id):
     return redirect('liste_bordereaux')
 
 
-from decimal import Decimal
 
 def factures_medecins_bordereau(request, no_bordereau):
     bordereau = get_object_or_404(Bordereau, no_bordereau=no_bordereau)
@@ -876,6 +886,278 @@ def bordereau_par_compagnie(request):
     })
 
 
+ACTE_CONFIGS = [
+    ('medecin_cempn', 'Consultation CEMPN', 'cs_cempn', 'date_cempn', 'honoraire_cempn', 'CEMPN'),
+    ('medecin_oph', 'Consultation OPH', 'cs_oph', 'date_cs_oph', 'honoraire_cs_oph', 'OPH'),
+    ('medecin_orl', 'Consultation ORL', 'cs_orl', 'date_cs_orl', 'honoraire_cs_orl', 'ORL'),
+    ('medecin_radio', 'Consultation Radio', 'cs_radio', 'date_cs_radio', 'honoraire_cs_radio', 'RADIO'),
+    ('medecin_labo', 'Biologie sanguine', 'cs_labo', 'date_cs_labo', 'honoraire_cs_labo', 'LABO'),
+    ('medecin_labo', 'Biologie urinaire', 'cs_lbx', 'date_cs_lbx', 'honoraire_cs_lbx', 'LABOX'),
+    ('medecin_labo', 'Recherche toxique', 'cs_toxique', 'date_cs_toxique', 'honoraire_cs_toxique', 'TOX'),
+]
+
+
+def _generate_medecin_invoice_number(medecin, emission_date):
+    initiale = (medecin.nom.strip()[0] if medecin.nom else medecin.prenom[:1]).upper()
+    base = f"{emission_date.year}-{initiale}-{emission_date.strftime('%d%m%Y')}"
+    candidate = base
+    suffix = 2
+    while MedecinInvoice.objects.filter(number=candidate).exists():
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    return candidate
+
+
+def _create_medecin_invoice(medecin, entries):
+    emission_date = timezone.now().date()
+    number = _generate_medecin_invoice_number(medecin, emission_date)
+
+    total_brut = sum(Decimal(entry.get('montant_brut', Decimal('0'))) for entry in entries)
+    total_redevance = sum(Decimal(entry.get('redevance', Decimal('0'))) for entry in entries)
+    total_net = sum(Decimal(entry.get('montant_net', Decimal('0'))) for entry in entries)
+
+    invoice = MedecinInvoice.objects.create(
+        medecin=medecin,
+        number=number,
+        emission_date=emission_date,
+        total_brut=total_brut.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+        total_redevance=total_redevance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+        total_net=total_net.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+    )
+
+    for entry in entries:
+        date_acte = entry.get('date') or emission_date
+        MedecinInvoiceLine.objects.create(
+            invoice=invoice,
+            evenement_id=entry['event_id'],
+            act_code=entry['act_code'],
+            act_label=entry['acte'],
+            date_acte=date_acte,
+            patient_nom=entry.get('patient_nom', ''),
+            patient_prenom=entry.get('patient_prenom', ''),
+            facture_no=entry.get('facture_no'),
+            montant_brut=Decimal(entry.get('montant_brut', Decimal('0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+            redevance=Decimal(entry.get('redevance', Decimal('0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+            montant_net=Decimal(entry.get('montant_net', Decimal('0'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP),
+        )
+
+    return invoice
+
+
+def _collect_medecin_histories(target_medecin=None):
+    history_map = defaultdict(list)
+
+    medecins_qs = Medecin.objects.order_by('nom', 'prenom')
+    if target_medecin:
+        medecins_qs = medecins_qs.filter(pk=target_medecin.pk)
+
+    medecins = list(medecins_qs)
+    if not medecins:
+        return history_map
+
+    medecin_ids = [med.id for med in medecins]
+
+    evenements_qs = (
+        FicheEvenement.objects
+        .select_related(
+            'personnel', 'bordereau',
+            'medecin_cempn', 'medecin_oph', 'medecin_orl',
+            'medecin_radio', 'medecin_labo'
+        )
+        .filter(
+            Q(medecin_cempn_id__in=medecin_ids)
+            | Q(medecin_oph_id__in=medecin_ids)
+            | Q(medecin_orl_id__in=medecin_ids)
+            | Q(medecin_radio_id__in=medecin_ids)
+            | Q(medecin_labo_id__in=medecin_ids)
+        )
+    )
+
+    evenements = list(evenements_qs)
+    if not evenements:
+        return history_map
+
+    event_ids = [e.id for e in evenements]
+
+    lines_map = {}
+    if event_ids:
+        lignes = (
+            MedecinInvoiceLine.objects
+            .select_related('invoice')
+            .filter(
+                evenement_id__in=event_ids,
+                invoice__medecin_id__in=medecin_ids
+            )
+        )
+        lines_map = {
+            (ligne.evenement_id, ligne.act_code): ligne
+            for ligne in lignes
+        }
+
+    for evenement in evenements:
+        for field_name, act_label, flag_field, date_field, amount_field, act_code in ACTE_CONFIGS:
+            medecin = getattr(evenement, field_name)
+            if not medecin or medecin.id not in medecin_ids:
+                continue
+            if not getattr(evenement, flag_field, False):
+                continue
+
+            act_date = getattr(evenement, date_field, None) or evenement.date_evenement
+            montant_brut = Decimal(getattr(evenement, amount_field, 0) or 0)
+
+            ligne = lines_map.get((evenement.id, act_code))
+
+            if ligne:
+                redevance = ligne.redevance
+                montant_net = ligne.montant_net
+                invoice_number = ligne.invoice.number
+                invoice_id = ligne.invoice_id
+                invoice_date = ligne.invoice.emission_date
+            else:
+                if medecin.nom and medecin.nom.strip().upper() == 'HELLEC':
+                    redevance = Decimal('0.00')
+                else:
+                    redevance = (montant_brut * Decimal('0.06')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                montant_net = (montant_brut - redevance).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                invoice_number = ''
+                invoice_id = None
+                invoice_date = None
+
+            history_map[medecin.id].append({
+                'acte': act_label,
+                'act_code': act_code,
+                'date': act_date,
+                'event_id': evenement.id,
+                'facture_no': evenement.no_facture,
+                'facture_id': evenement.pk,
+                'paiement': evenement.paiement,
+                'patient_nom': evenement.personnel.nom if evenement.personnel else '',
+                'patient_prenom': evenement.personnel.prenom if evenement.personnel else '',
+                'montant_brut': montant_brut,
+                'montant_net': montant_net,
+                'redevance': redevance,
+                'invoice_number': invoice_number,
+                'invoice_id': invoice_id,
+                'invoice_date': invoice_date,
+            })
+
+    return history_map
+
+
+@login_required(login_url='/login/')
+def intervenants_list(request):
+    medecins = list(Medecin.objects.order_by('nom', 'prenom'))
+    history_map = _collect_medecin_histories()
+
+    medecin_rows = []
+    for medecin in medecins:
+        history = history_map.get(medecin.id, [])
+        history.sort(key=lambda item: item['date'] or datetime.min, reverse=True)
+        medecin_rows.append({
+            'medecin': medecin,
+            'history': history,
+        })
+
+    return render(request, 'expertise/intervenants_list.html', {
+        'medecin_rows': medecin_rows,
+    })
+
+
+@login_required(login_url='/login/')
+def intervenant_history(request, pk):
+    medecin = get_object_or_404(Medecin, pk=pk)
+    history_map = _collect_medecin_histories(target_medecin=medecin)
+    history = history_map.get(medecin.id, [])
+    history.sort(key=lambda item: item['date'] or datetime.min, reverse=True)
+
+    pending_entries = [entry for entry in history if entry.get('paiement') and not entry.get('invoice_number')]
+    if pending_entries:
+        _create_medecin_invoice(medecin, pending_entries)
+        history_map = _collect_medecin_histories(target_medecin=medecin)
+        history = history_map.get(medecin.id, [])
+        history.sort(key=lambda item: item['date'] or datetime.min, reverse=True)
+
+    paid_entries = [entry for entry in history if entry.get('paiement')]
+    total_brut = sum(entry.get('montant_brut', Decimal('0')) or Decimal('0') for entry in paid_entries)
+    total_redevance = sum(entry.get('redevance', Decimal('0')) or Decimal('0') for entry in paid_entries)
+    total_net = total_brut - total_redevance
+
+    invoices = list(MedecinInvoice.objects.filter(medecin=medecin))
+    latest_invoice = invoices[0] if invoices else None
+
+    return render(request, 'expertise/intervenant_history.html', {
+        'medecin': medecin,
+        'history': history,
+        'total_brut': total_brut,
+        'total_redevance': total_redevance,
+        'total_net': total_net,
+        'latest_invoice': latest_invoice,
+        'invoices': invoices,
+    })
+
+
+@login_required(login_url='/login/')
+def intervenant_invoice(request, pk, invoice_id):
+    medecin = get_object_or_404(Medecin, pk=pk)
+    invoice = get_object_or_404(MedecinInvoice, pk=invoice_id, medecin=medecin)
+
+    pdf_file = _render_medecin_invoice_pdf(invoice)
+    filename = f"FactureMedecin_{invoice.number}.pdf"
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+def _render_medecin_invoice_pdf(invoice):
+    entries = [
+        {
+            'date': ligne.date_acte,
+            'acte': ligne.act_label,
+            'patient': f"{ligne.patient_prenom} {ligne.patient_nom}".strip(),
+            'montant_brut': ligne.montant_brut,
+            'redevance': ligne.redevance,
+            'montant_net': ligne.montant_net,
+        }
+        for ligne in invoice.lignes.all().order_by('date_acte', 'pk')
+    ]
+
+    html_string = render_to_string('expertise/facture_medecin_historique_pdf.html', {
+        'medecin': invoice.medecin,
+        'invoice_number': invoice.number,
+        'emission_date': invoice.emission_date,
+        'entries': entries,
+        'total_brut': invoice.total_brut,
+        'total_redevance': invoice.total_redevance,
+        'total_net': invoice.total_net,
+    })
+
+    return HTML(string=html_string).write_pdf()
+
+
+@login_required(login_url='/login/')
+def intervenant_invoices_zip(request, pk):
+    medecin = get_object_or_404(Medecin, pk=pk)
+    invoices = list(MedecinInvoice.objects.filter(medecin=medecin))
+
+    if not invoices:
+        return redirect('intervenant_history', pk=pk)
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for invoice in invoices:
+            pdf_bytes = _render_medecin_invoice_pdf(invoice)
+            filename = f"FactureMedecin_{invoice.number}.pdf"
+            archive.writestr(filename, pdf_bytes)
+
+    buffer.seek(0)
+    zip_filename = f"FacturesMedecin_{medecin.nom}_{medecin.prenom}.zip".replace(' ', '_')
+
+    response = HttpResponse(buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+    return response
+
+
 @login_required(login_url='/login/')
 def relance_factures(request):
     cutoff_date = timezone.now().date() - timedelta(days=180)
@@ -959,12 +1241,10 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from docx import Document
 from .models import FactureMedecin, Bordereau, FicheEvenement
-from decimal import Decimal
 
 from docx import Document
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from decimal import Decimal
 from .models import Bordereau, Medecin, FactureMedecin, FicheEvenement
 
 def telecharger_facture_medecin(request, bordereau_no, medecin_id):
@@ -1058,7 +1338,6 @@ def telecharger_facture_medecin(request, bordereau_no, medecin_id):
 
     return response
 
-from decimal import Decimal
 
 def telecharger_facture_medecin(request, bordereau_no, medecin_id):
     bordereau = get_object_or_404(Bordereau, no_bordereau=bordereau_no)

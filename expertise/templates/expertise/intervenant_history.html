@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Historique - {{ medecin.nom }} {{ medecin.prenom }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        .badge-green {
+            background-color: #28a745;
+        }
+        .badge-red {
+            background-color: #dc3545;
+        }
+        .actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'intervenants_list' %}">← Retour à la liste des intervenants</a>
+        <h1>Historique d'activité</h1>
+        <h2>{{ medecin.prenom }} {{ medecin.nom }} — {{ medecin.specialite }}</h2>
+
+        {% if history %}
+            <p><strong>Total brut (actes payés) :</strong> {{ total_brut|floatformat:0 }} XPF</p>
+            <p><strong>Total redevance :</strong> {{ total_redevance|floatformat:0 }} XPF</p>
+            <p><strong>Total net à payer :</strong> {{ total_net|floatformat:0 }} XPF</p>
+
+            {% if latest_invoice %}
+                <p><strong>Dernière facture médecin :</strong> {{ latest_invoice.number }} ({{ latest_invoice.emission_date|date:"d/m/Y" }})</p>
+            {% else %}
+                <p>Aucune facture médecin n'a encore été générée pour cet intervenant.</p>
+            {% endif %}
+
+            {% if invoices %}
+                <h3>Factures générées</h3>
+                <ul>
+                    {% for invoice in invoices %}
+                        <li>
+                            {{ invoice.number }} — émise le {{ invoice.emission_date|date:"d/m/Y" }} — net {{ invoice.total_net|floatformat:0 }} XPF
+                            (<a href="{% url 'intervenant_invoice' medecin.id invoice.id %}">Télécharger</a>)
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p><a href="{% url 'intervenant_invoice_all' medecin.id %}">Télécharger toutes les factures (ZIP)</a></p>
+            {% endif %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Acte</th>
+                        <th>Patient</th>
+                        <th>Facture</th>
+                        <th>Montant brut (XPF)</th>
+                        <th>Redevance (XPF)</th>
+                        <th>Montant net (XPF)</th>
+                        <th>Statut</th>
+                        <th>Facture médecin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in history %}
+                        <tr>
+                            <td>{{ entry.date|date:"d/m/Y" }}</td>
+                            <td>{{ entry.acte }}</td>
+                            <td>{{ entry.patient_prenom }} {{ entry.patient_nom }}</td>
+                            <td>
+                                {% if entry.facture_no %}
+                                    <a href="{% url 'facture' entry.facture_id %}">{{ entry.facture_no }}</a>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.montant_brut|floatformat:0 }}</td>
+                            <td>{{ entry.redevance|floatformat:0 }}</td>
+                            <td>{{ entry.montant_net|floatformat:0 }}</td>
+                            <td>
+                                <span class="badge {% if entry.paiement %}badge-green{% else %}badge-red{% endif %}">
+                                    {% if entry.paiement %}Payée{% else %}Non payée{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if entry.invoice_number and entry.invoice_id %}
+                                    <a href="{% url 'intervenant_invoice' medecin.id entry.invoice_id %}">{{ entry.invoice_number }}</a>
+                                {% elif entry.invoice_number %}
+                                    {{ entry.invoice_number }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Aucun acte enregistré pour ce médecin.</p>
+        {% endif %}
+
+        <div class="actions">
+            <a href="{% url 'accueil' %}">🏠 Retour à l'accueil</a>
+        </div>
+    </div>
+</body>
+</html>

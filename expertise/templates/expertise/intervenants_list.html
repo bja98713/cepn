@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Intervenants médicaux</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .history-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #ececec;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+        .badge-green {
+            background-color: #28a745;
+        }
+        .badge-red {
+            background-color: #dc3545;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="{% url 'accueil' %}">← Retour à l'accueil</a>
+        <h1>Intervenants médicaux</h1>
+        {% if medecin_rows %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Spécialité</th>
+                        <th>Historique</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in medecin_rows %}
+                        <tr>
+                            <td>{{ row.medecin.nom }}</td>
+                            <td>{{ row.medecin.prenom }}</td>
+                            <td>{{ row.medecin.specialite }}</td>
+                            <td>
+                                {% if row.history %}
+                                    <a href="{% url 'intervenant_history' row.medecin.id %}">Historique complet</a>
+                                {% else %}
+                                    Aucun acte enregistré.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Aucun intervenant enregistré.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

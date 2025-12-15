@@ -4,6 +4,44 @@ from django.utils import timezone
 from datetime import datetime
 import re
 
+
+class MedecinInvoice(models.Model):
+    medecin = models.ForeignKey('Medecin', on_delete=models.CASCADE, related_name='factures_generales')
+    number = models.CharField(max_length=50, unique=True)
+    emission_date = models.DateField()
+    total_brut = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_redevance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_net = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-emission_date', '-created_at']
+
+    def __str__(self):
+        return f"Facture médecin {self.number}"
+
+
+class MedecinInvoiceLine(models.Model):
+    invoice = models.ForeignKey(MedecinInvoice, on_delete=models.CASCADE, related_name='lignes')
+    evenement = models.ForeignKey('FicheEvenement', on_delete=models.CASCADE, related_name='factures_medicaux')
+    act_code = models.CharField(max_length=30)
+    act_label = models.CharField(max_length=120)
+    date_acte = models.DateField()
+    patient_nom = models.CharField(max_length=120)
+    patient_prenom = models.CharField(max_length=120)
+    facture_no = models.CharField(max_length=50, blank=True, null=True)
+    montant_brut = models.DecimalField(max_digits=12, decimal_places=2)
+    redevance = models.DecimalField(max_digits=12, decimal_places=2)
+    montant_net = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('evenement', 'act_code')
+        ordering = ['date_acte', 'pk']
+
+    def __str__(self):
+        return f"Ligne {self.act_code} - {self.invoice.number}"
+
 # --- Médecins ---
 class Medecin(models.Model):
     nom = models.CharField(max_length=100)

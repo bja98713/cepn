@@ -2,22 +2,21 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Facture médecin</title>
+    <title>Facture médecin {{ invoice_number }}</title>
     <style>
         body {
             font-family: "Helvetica", "Arial", sans-serif;
             font-size: 12px;
             padding: 30px;
-            background: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?fit=crop&w=1000') no-repeat;
-            background-size: cover;
-            background-position: center;
+            background-color: #f8f8f8;
             color: #000;
         }
 
         .wrapper {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 20px 30px;
-            border-radius: 10px;
+            background-color: #fff;
+            padding: 25px 35px;
+            border-radius: 8px;
+            border: 1px solid #d0d0d0;
         }
 
         h1, h2 {
@@ -83,37 +82,39 @@
 <body>
 <div class="wrapper">
     <h1>Centre d'Expertises Médicales du Personnel Navigant</h1>
-    <h2>Facture pour le Dr {{ medecin.nom }} {{ medecin.prenom }}</h2>
+    <h2>Facture {{ invoice_number }}</h2>
 
-    <p><strong>Bordereau :</strong> {{ bordereau.no_bordereau }}</p>
-    <p><strong>Date :</strong> {{ bordereau.date_bordereau|date:"d/m/Y" }}</p>
+    <p><strong>Médecin :</strong> {{ medecin.nom }} {{ medecin.prenom }} ({{ medecin.specialite }})</p>
+    <p><strong>Date d'émission :</strong> {{ emission_date|date:"d/m/Y" }}</p>
 
     <table>
         <thead>
             <tr>
                 <th>Date</th>
+                <th>Acte</th>
                 <th>Patient</th>
-                <th>Montant brut</th>
-                <th>Redevance</th>
-                <th>Montant net</th>
+                <th>Montant brut (XPF)</th>
+                <th>Redevance (XPF)</th>
+                <th>Montant net (XPF)</th>
             </tr>
         </thead>
         <tbody>
-            {% for e in evenements %}
+            {% for entry in entries %}
             <tr>
-                <td>{{ e.date }}</td>
-                <td>{{ e.patient }}</td>
-                <td>{{ e.montant }} XPF</td>
-                <td>{{ e.redevance }} XPF</td>
-                <td>{{ e.net }} XPF</td>
+                <td>{{ entry.date|date:"d/m/Y" }}</td>
+                <td>{{ entry.acte }}</td>
+                <td>{{ entry.patient }}</td>
+                <td>{{ entry.montant_brut|floatformat:0 }}</td>
+                <td>{{ entry.redevance|floatformat:0 }}</td>
+                <td>{{ entry.montant_net|floatformat:0 }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <p class="total">💰 <strong>Total brut :</strong> {{ total_brut }} XPF</p>
-    <p class="total">🧾 <strong>Total redevance :</strong> {{ total_redevance }} XPF</p>
-    <p class="total">✅ <strong>Total net à payer :</strong> {{ total_net }} XPF</p>
+    <p class="total">💰 <strong>Total brut :</strong> {{ total_brut|floatformat:0 }} XPF</p>
+    <p class="total">🧾 <strong>Total redevance :</strong> {{ total_redevance|floatformat:0 }} XPF</p>
+    <p class="total">✅ <strong>Total net à payer :</strong> {{ total_net|floatformat:0 }} XPF</p>
 
     {% if medecin.iban %}
     <p class="iban"><strong>IBAN / RIB :</strong> {{ medecin.iban }}</p>
