@@ -5,6 +5,7 @@
     <title>Supprimer l'événement</title>
 </head>
 <body>
+{% include 'expertise/_back_home.html' %}
     <h1>Supprimer l'événement</h1>
     <p>Êtes-vous sûr de vouloir supprimer l'événement du {{ object.date_evenement|date:"d/m/Y" }} pour {{ object.personnel.prenom }} {{ object.personnel.nom }} ?</p>
     <form method="post">

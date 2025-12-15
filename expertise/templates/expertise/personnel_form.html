@@ -62,6 +62,7 @@
     <title>{% if object %}Modifier{% else %}Ajouter{% endif %} un Personnel Navigant</title>
 </head>
 <body>
+{% include 'expertise/_back_home.html' %}
     <h1>{% if object %}Modifier{% else %}Ajouter{% endif %} un Personnel Navigant</h1>
     <form method="post">
         {% csrf_token %}

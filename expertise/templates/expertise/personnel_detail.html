@@ -39,6 +39,7 @@
     <title>Détails du Personnel</title>
 </head>
 <body>
+{% include 'expertise/_back_home.html' %}
     <h1>{{ personnel.prenom }} {{ personnel.nom }}</h1>
     <p><strong>DN :</strong> {{ personnel.dn }}</p>
     <p><strong>Date de naissance :</strong> {{ personnel.date_de_naissance|date:"d/m/Y" }}</p>

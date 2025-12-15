@@ -5,103 +5,270 @@
     <title>Accueil - CEPN</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --background: linear-gradient(135deg, #0d47a1, #42a5f5);
+        --card-bg: rgba(255, 255, 255, 0.92);
+        --text-primary: #1c2a39;
+        --text-secondary: #4f5b62;
+        --accent: #0d47a1;
+        --accent-light: #42a5f5;
+        --border-radius: 16px;
+        --shadow: 0 12px 35px rgba(13, 71, 161, 0.18);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Roboto', Arial, sans-serif;
+        background: var(--background);
+        color: var(--text-primary);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 40px 20px;
+      }
+
+      .dashboard {
+        width: 100%;
+        max-width: 1100px;
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .dashboard__header {
+        padding: 36px 40px 28px;
+        background: linear-gradient(145deg, rgba(13, 71, 161, 0.92), rgba(66, 165, 245, 0.85));
+        color: #fff;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand h1 {
+        font-size: 2.2rem;
+        margin: 0;
+        letter-spacing: 0.02em;
+      }
+
+      .brand p {
+        margin: 8px 0 0;
+        font-size: 0.95rem;
+        opacity: 0.9;
+      }
+
+      .user-panel {
+        background: rgba(255, 255, 255, 0.12);
+        padding: 14px 22px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+      }
+
+      .user-panel strong {
+        display: block;
+        font-size: 1.05rem;
+        margin-bottom: 6px;
+      }
+
+      .logout-link {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 8px 16px;
+        background: #fff;
+        color: var(--accent);
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .logout-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(255, 255, 255, 0.25);
+      }
+
+      .dashboard__content {
+        padding: 32px 40px 44px;
+      }
+
+      .sections {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 22px;
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 8px 20px rgba(13, 71, 161, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(66, 165, 245, 0.08), rgba(13, 71, 161, 0.08));
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(13, 71, 161, 0.18);
+      }
+
+      .card:hover::after {
+        opacity: 1;
+      }
+
+      .card a {
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        z-index: 1;
+        display: block;
+      }
+
+      .card__icon {
+        font-size: 2rem;
+        margin-bottom: 16px;
+      }
+
+      .card__title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .card__subtitle {
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+      }
+
+      .info-banner {
+        margin-top: 36px;
+        background: rgba(13, 71, 161, 0.08);
+        border-left: 4px solid var(--accent);
+        border-radius: 10px;
+        padding: 18px 22px;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+      }
+
+      @media (max-width: 720px) {
         body {
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          background-color: #f8f8f8;
-          color: #333;
+          padding: 20px 16px;
         }
-        /* Style pour l'en-tête principal */
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
+
+        .dashboard__header {
+          padding: 28px 24px 22px;
         }
-        .header h1 {
-          color: #007bff;
-          font-size: 2em;
-          margin: 0;
+
+        .dashboard__content {
+          padding: 28px 24px 36px;
         }
-        .header h2 {
-          color: #007bff;
-          font-size: 1.2em;
-          margin: 5px 0 0 0;
-          font-weight: normal;
-        }
-        /* Sous-titre pour la liste */
-        h3 {
-          color: #333;
-          text-align: center;
-          margin-top: 20px;
-        }
-        /* Styles pour le formulaire de recherche */
-        .search-form {
-          margin-bottom: 20px;
-          text-align: center;
-        }
-        .search-form input[type="text"] {
-          padding: 8px;
-          width: 300px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-        }
-        .search-form button {
-          padding: 8px 12px;
-          border: none;
-          background-color: #007bff;
-          color: #fff;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .search-form button:hover {
-          background-color: #0056b3;
-        }
-        /* Styles pour le tableau */
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-          background-color: #fff;
-        }
-        th, td {
-          padding: 10px;
-          border: 1px solid #ddd;
-          text-align: center;
-        }
-        th {
-          background-color: #007bff;
-          color: #fff;
-        }
-        tr:nth-child(even) {
-          background-color: #f2f2f2;
-        }
-        .action-links a {
-          margin: 0 5px;
-          color: #007bff;
-          text-decoration: none;
-        }
-        .action-links a:hover {
-          text-decoration: underline;
-        }
-      </style>
+      }
+    </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Bienvenue</h1>
-    </div>
-    <div class="container">
-        <ul>
-            <li><a href="{% url 'personnel_list' %}">👤 Accès à la Liste du Personnel Naviguant</a></li>
-          <li><a href="{% url 'facture_search' %}">🔍 Recherche par facture</a></li>
-            <li><a href="{% url 'facture_par_compagnie' %}">✈️ Recherche de factures par compagnie</a></li>
-            <li><a href="{% url 'bordereau_par_compagnie' %}">🧾 Recherche de bordereaux par compagnie</a></li>
-            <li><a href="{% url 'intervenants_list' %}">👨‍⚕️ Intervenants médicaux</a></li>
-            <li><a href="{% url 'relance_factures' %}">📬 Procédure de relance (Factures &gt; 6 mois)</a></li>
-          <li><a href="{% url 'export_evenements_excel' %}">📄 Export général Excel</a></li>
-            <li><a href="{% url 'admin:index' %}">⚙️ Administration (Django Admin)</a></li>
-        </ul>
+    <div class="dashboard">
+      <header class="dashboard__header">
+        <div class="brand">
+          <h1>Centre d'Expertises Médicales</h1>
+          <p>Gestion des dossiers CEPN Polynésie française</p>
+        </div>
+        <div class="user-panel">
+          <strong>Bonjour {{ user.username }} 👋</strong>
+          <span>Besoin d'une pause ?</span>
+          <br>
+          <a class="logout-link" href="{% url 'logout' %}">Se déconnecter</a>
+        </div>
+      </header>
 
-        <p>Connecté en tant que : {{ user.username }}</p>
-        <a href="{% url 'logout' %}">Se déconnecter</a>
+      <main class="dashboard__content">
+        <div class="sections">
+          <article class="card">
+            <a href="{% url 'personnel_list' %}">
+              <div class="card__icon">👤</div>
+              <div class="card__title">Personnel Navigant</div>
+              <div class="card__subtitle">Consulter, ajouter et suivre les dossiers des navigants.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'facture_search' %}">
+              <div class="card__icon">🔍</div>
+              <div class="card__title">Recherche facture</div>
+              <div class="card__subtitle">Retrouver rapidement une facture par numéro ou patient.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'facture_par_compagnie' %}">
+              <div class="card__icon">✈️</div>
+              <div class="card__title">Factures par compagnie</div>
+              <div class="card__subtitle">Vision consolidée et totaux par transporteur.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'bordereau_par_compagnie' %}">
+              <div class="card__icon">🧾</div>
+              <div class="card__title">Bordereaux</div>
+              <div class="card__subtitle">Consulter les bordereaux, montants et téléchargements.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'intervenants_list' %}">
+              <div class="card__icon">👨‍⚕️</div>
+              <div class="card__title">Intervenants médicaux</div>
+              <div class="card__subtitle">Suivi des médecins, historiques et factures honoraires.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'relance_factures' %}">
+              <div class="card__icon">📬</div>
+              <div class="card__title">Relances</div>
+              <div class="card__subtitle">Identifier les factures en attente (plus de 6 mois).</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'export_evenements_excel' %}">
+              <div class="card__icon">📄</div>
+              <div class="card__title">Export Excel</div>
+              <div class="card__subtitle">Exporter l'activité globale pour analyses et archives.</div>
+            </a>
+          </article>
+
+          <article class="card">
+            <a href="{% url 'admin:index' %}">
+              <div class="card__icon">⚙️</div>
+              <div class="card__title">Administration</div>
+              <div class="card__subtitle">Accès complet au back-office Django.</div>
+            </a>
+          </article>
+        </div>
+
+        <section class="info-banner">
+          🔔 Astuce : pensez à générer régulièrement les bordereaux et factures médecins pour garder vos comptes à jour. Toute action est directement historisée dans le système.
+        </section>
+      </main>
     </div>
 </body>
 </html>
